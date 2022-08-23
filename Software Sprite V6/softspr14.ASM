@@ -1,0 +1,4058 @@
+
+	SCR 	EQU	128
+	SCR_LO	EQU	SCR
+	SCR_HI	EQU	SCR +1
+
+	REGA EQU SCR +2
+	REGX EQU REGA +1
+	REGY EQU REGX +1
+	
+	SPR_AND EQU REGY +1
+	SPR_ORA EQU SPR_AND +2
+
+	AND_LO_LO EQU SPR_ORA +2
+	AND_LO_HI EQU AND_LO_LO +1
+	AND_HI_LO EQU AND_LO_HI +1
+	AND_HI_HI EQU AND_HI_LO +1
+	ORA_LO_LO EQU AND_HI_HI +1
+	ORA_LO_HI EQU ORA_LO_LO +1
+	ORA_HI_LO EQU ORA_LO_HI +1
+	ORA_HI_HI EQU ORA_HI_LO +1	
+	
+	SPR_CNT EQU ORA_HI_HI +1
+	TV	EQU	SPR_CNT +1
+	TH	EQU	TV +1
+	FIRE EQU TH +1
+	
+ ICL 'hardware.s'
+
+	ORG $800
+				
+INIT	LDA PORTB ; disable basic
+		ORA #$02
+		STA PORTB
+			 	
+		LDA #$00 ; disable antic
+	    STA SDMCTL
+	    STA DMACTL
+				
+		LDA #$14 	; set colours
+	    STA COLOR1 ;	    STA COLPF1
+	    LDA #$66
+	    STA COLOR2 ;	    STA COLPF2
+	    LDA #$0e
+	    STA COLOR3 ;	    STA COLPF3		      
+	    LDA #$00
+	    STA COLOR4 ;	    STA COLBK
+			
+		LDA #<DISPLAY_LIST	; Extract low BYTE from DISPLAY_LIST and store it in SDLSTL
+		STA SDLSTL
+		LDA #>DISPLAY_LIST	; Extract high BYTE from DISPLAY_LIST and store it in SDLSTL+1
+		STA SDLSTL+1		; Therefore tell antic the starting address of the custom display list.
+
+;BITS	VALUE	COLOR          
+;0000	0	grey (no color)
+;0001	1	light orange
+;0010	2	orange
+;0011	3	red orange
+;0100	4	pink
+;0101	5	purple
+;0110	6	purple blue
+;0111	7	blue
+;1000	8	blue
+;1001	9	light blue
+;1010	10	turquoise
+;1011	11	blue green
+;1100	12	green
+;1101	13	yellow green;
+;1110	14	orange green;
+;1111	15	light orange
+						
+		LDA #$21 			; narrow 23 wide ; #$22       		;
+		STA SDMCTL     		; Store literal $23 in SDMCTL - therefore switch ANTIC back on to narrow.
+		
+		LDA #100
+		STA TH
+		STA	TV
+
+		JSR SB_FILL
+		
+		LDA #%00011011 
+		LDX #<SCN ; SCN
+		LDY #>SCN ; SCN
+		STX SCR+0
+		STY SCR+1
+		LDX #>6144
+		LDY #<6144
+		JSR	MEMSET
+
+MLOOP	JSR	V_WAIT
+
+		lda #$ff
+		sta COLBK
+		
+;		LDX TH ;		LDY TV ;		JSR	PLOT_AND
+		JSR	JOYSTICK
+;		LDX TH ;		LDY TV ;		JSR	PLOT_OR
+
+		lda #$88
+		sta COLBK
+
+		LDX TH
+		LDA TV
+		LDY #3
+		JSR SCB_TSB
+
+		lda #$44
+		sta COLBK
+ 
+		LDX #40
+		LDA #40
+		LDY #0
+		JSR SPR_TSB
+
+		LDX #50
+		LDA #50
+		LDY #1
+		JSR SPR_TSB
+
+		LDX #60
+		LDA #60
+		LDY #2
+		JSR SPR_TSB
+
+		LDX #70
+		LDA #70
+		LDY #3
+		JSR SPR_TSB
+
+		lda #$66
+		sta COLBK
+
+		LDX TH
+		LDA TV
+		LDY #3
+		JSR SPR_TSB
+
+		lda #$bb
+		sta COLBK
+
+		LDX TH
+		LDA TV
+		LDY #3
+		JSR TSB_SCN
+
+		lda COLOR4
+		sta COLBK
+		
+		JMP	MLOOP
+		
+;PLOT_OR	LDA	SC_LO,Y
+;		STA	SCR
+;		LDA	SC_HI,Y 
+;		STA	SCR+1 
+;		LDY	SCR_HOR,X
+;		LDA	(SCR),Y
+;		ORA	SCR_OR,X
+;		STA	(SCR),Y 
+;		RTS
+
+;PLOT_AND
+;		LDA	SC_LO,Y
+;        STA SCR 
+;		LDA SC_HI,Y 
+;        STA SCR+1 
+;        LDY SCR_HOR,X
+;        LDA (SCR),Y
+;		AND SCR_AND,X
+;		STA (SCR),Y 
+;        RTS
+
+.LOCAL	V_WAIT
+			LDA	#111
+LOOP			CMP	VCOUNT  ; will be equal until incremented in VB
+				BNE	LOOP
+			RTS
+.ENDL
+
+.LOCAL	JOYSTICK
+			LDA PORTA
+			LSR
+			BCS   UP
+				DEC   TV
+UP       	LSR
+			BCS   DOWN
+				INC   TV
+DOWN     	LSR
+			BCS   LEFT
+				DEC   TH
+LEFT     	LSR
+			BCS   RIGHT
+				INC   TH
+RIGHT    	AND   #1
+			STA   FIRE
+			RTS
+.ENDL
+
+.LOCAL	SB_FILL
+			LDX	#31
+LOOP_H  		LDY	#23
+LOOP_V				JSR	CHAR_SB_2
+					DEY
+					BPL	LOOP_V
+				DEX
+				BPL	LOOP_H
+			RTS 
+.ENDL
+  
+.LOCAL	CHAR_SB_2
+			STY		REGY
+			TYA
+			ASL
+			ASL
+			ASL
+			TAY
+			LDA		SC_LO,Y
+			STA		SCR 
+			LDA		SB_HI,Y 
+			STA		SCR+1 
+
+			STX   	REGX
+
+			LDA   REGY
+			CLC
+			ADC   REGX
+			AND   #15
+			TAY
+			LDA		PATTERN,Y
+			STA		REGA
+
+			LDY		REGX
+			LDX		#8
+LOOP  			LDA		REGA
+				STA   	(SCR),Y
+				TYA
+				CLC
+				ADC 	#32
+				TAY
+				DEX
+				BNE   LOOP
+			LDX		REGX
+			LDY		REGY
+			RTS
+.ENDL
+
+.LOCAL	MEMSET
+			STY	LSB_ONLY+1 ; store LSB count
+			CPX	#0          ; MSB?     
+            BEQ	LSB_ONLY   ; no
+
+            LDY	#0          ; yes so reset LSB
+MSB_LOOP  
+LSB_LOOP    		STA	(SCR),Y   ; clear whole MSB
+					DEY 
+					BNE	LSB_LOOP
+
+				INC	SCR+1      ; inc MSB
+				DEX               ; dec MSB count
+				BNE	MSB_LOOP
+
+LSB_ONLY    LDY	#0          ; LSB count 
+            BEQ	MS_END     ; not needed
+
+LAST_LSB_LOOP 	STA	(SCR),Y
+				DEY 
+				BNE	LAST_LSB_LOOP
+                
+            STA	(SCR),Y     ; clear last Y (0)
+MS_END      RTS
+.ENDL
+		
+.LOCAL	SCB_TSB
+			STA REGY
+			LDA SPRITE_SCB_TSB_LO,Y
+			STA SCB_TSB_JMP+1
+			LDA SPRITE_SCB_TSB_HI,Y
+			STA SCB_TSB_JMP+2
+			LDA SPRITE_SCB_TSB_SIZE,Y
+			LDY REGY
+SCB_TSB_JMP JMP $ABCD
+.ENDL
+
+.LOCAL	SCB_TSB_08 ; copy from screen buffer to temp buffer - size 1
+			STA SPR_CNT
+			TXA
+			
+			LDX SB_HI +8,Y
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+	
+			LDX TB_HI +8,Y
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+
+			LDX SC_LO +8,Y
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX SB_HI +7,Y
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			
+			LDX TB_HI +7,Y
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+
+			LDX SC_LO +7,Y
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX SB_HI +6,Y
+			STX SRC07 +2
+			
+			LDX TB_HI +6,Y
+			STX DST07 +2
+
+			LDX SC_LO +6,Y
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX SB_HI +5,Y
+			STX SRC06 +2
+
+			LDX TB_HI +5,Y
+			STX DST06 +2
+
+			LDX SC_LO +5,Y
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX SB_HI +4,Y
+			STX SRC05 +2
+
+			LDX TB_HI +4,Y
+			STX DST05 +2
+
+			LDX SC_LO +4,Y
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX SB_HI +3,Y
+			STX SRC04 +2
+			
+			LDX TB_HI +3,Y
+			STX DST04 +2
+			
+			LDX SC_LO +3,Y
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX SB_HI +2,Y
+			STX SRC03 +2
+			
+			LDX TB_HI +2,Y
+			STX DST03 +2
+
+			LDX SC_LO +2,Y
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX SB_HI +1,Y
+			STX SRC02 +2
+			
+			LDX TB_HI +1,Y
+			STX DST02 +2
+
+			LDX SC_LO +1,Y
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				INY
+				DEX
+				BPL LOOP
+			RTS
+.ENDL
+
+.LOCAL	SCB_TSB_16
+			STA SPR_CNT
+			TXA
+			
+			LDX SB_HI +16,Y
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+	
+			LDX TB_HI +16,Y
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+
+			LDX SC_LO +16,Y
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX SB_HI +15,Y
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			
+			LDX TB_HI +15,Y
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+
+			LDX SC_LO +15,Y
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX SB_HI +14,Y
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			
+			LDX TB_HI +14,Y
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+
+			LDX SC_LO +14,Y
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX SB_HI +13,Y
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+
+			LDX TB_HI +13,Y
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+
+			LDX SC_LO +13,Y
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX SB_HI +12,Y
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+
+			LDX TB_HI +12,Y
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+
+			LDX SC_LO +12,Y
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX SB_HI +11,Y
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			
+			LDX TB_HI +11,Y
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			
+			LDX SC_LO +11,Y
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX SB_HI +10,Y
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			
+			LDX TB_HI +10,Y
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+
+			LDX SC_LO +10,Y
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX SB_HI +9,Y
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			
+			LDX TB_HI +9,Y
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+
+			LDX SC_LO +9,Y
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				INY
+				DEX
+				BPL LOOP
+			RTS
+.ENDL
+
+.LOCAL	SCB_TSB_24
+			STA SPR_CNT
+			TXA
+			
+			LDX SB_HI +24,Y
+			STX SRC25 +2
+			DEX
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+	
+			LDX TB_HI +24,Y
+			STX DST25 +2
+			DEX
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+
+			LDX SC_LO +24,Y
+			STX SRC25 +1
+			STX DST25 +1
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX SB_HI +23,Y
+			STX SRC24 +2
+			DEX
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			
+			LDX TB_HI +23,Y
+			STX DST24 +2
+			DEX
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+
+			LDX SC_LO +23,Y
+			STX SRC24 +1
+			STX DST24 +1
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX SB_HI +22,Y
+			STX SRC23 +2
+			DEX
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			
+			LDX TB_HI +22,Y
+			STX DST23 +2
+			DEX
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+
+			LDX SC_LO +22,Y
+			STX SRC23 +1
+			STX DST23 +1
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX SB_HI +21,Y
+			STX SRC22 +2
+			DEX
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+
+			LDX TB_HI +21,Y
+			STX DST22 +2
+			DEX
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+
+			LDX SC_LO +21,Y
+			STX SRC22 +1
+			STX DST22 +1
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX SB_HI +20,Y
+			STX SRC21 +2
+			DEX
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+
+			LDX TB_HI +20,Y
+			STX DST21 +2
+			DEX
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+
+			LDX SC_LO +20,Y
+			STX SRC21 +1
+			STX DST21 +1
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX SB_HI +19,Y
+			STX SRC20 +2
+			DEX
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			
+			LDX TB_HI +19,Y
+			STX DST20 +2
+			DEX
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			
+			LDX SC_LO +19,Y
+			STX SRC20 +1
+			STX DST20 +1
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX SB_HI +18,Y
+			STX SRC19 +2
+			DEX
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			
+			LDX TB_HI +18,Y
+			STX DST19 +2
+			DEX
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+
+			LDX SC_LO +18,Y
+			STX SRC19 +1
+			STX DST19 +1
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX SB_HI +17,Y
+			STX SRC18 +2
+			DEX
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			
+			LDX TB_HI +17,Y
+			STX DST18 +2
+			DEX
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+
+			LDX SC_LO +17,Y
+			STX SRC18 +1
+			STX DST18 +1
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC25  			LDA $ABCD,Y
+DST25  			STA $ABCD,Y
+
+SRC24  			LDA $ABCD,Y
+DST24  			STA $ABCD,Y
+SRC23  			LDA $ABCD,Y
+DST23  			STA $ABCD,Y
+SRC22  			LDA $ABCD,Y
+DST22  			STA $ABCD,Y
+SRC21  			LDA $ABCD,Y
+DST21  			STA $ABCD,Y
+SRC20  			LDA $ABCD,Y
+DST20  			STA $ABCD,Y
+SRC19  			LDA $ABCD,Y
+DST19  			STA $ABCD,Y
+SRC18  			LDA $ABCD,Y
+DST18  			STA $ABCD,Y
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+;				INY
+				DEX
+;				BPL LOOP
+				
+				BMI EXIT
+			INY
+			JMP LOOP				
+EXIT		RTS
+.ENDL
+
+.LOCAL	SCB_TSB_32
+			STA SPR_CNT
+			TXA
+			
+			LDX SB_HI +32,Y
+			STX SRC33 +2
+			DEX
+			STX SRC25 +2
+			DEX
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+	
+			LDX TB_HI +32,Y
+			STX DST33 +2
+			DEX
+			STX DST25 +2
+			DEX
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+
+			LDX SC_LO +32,Y
+			STX SRC33 +1
+			STX DST33 +1
+			STX SRC25 +1
+			STX DST25 +1
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX SB_HI +31,Y
+			STX SRC32 +2
+			DEX
+			STX SRC24 +2
+			DEX
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			
+			LDX TB_HI +31,Y
+			STX DST32 +2
+			DEX
+			STX DST24 +2
+			DEX
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+
+			LDX SC_LO +31,Y
+			STX SRC32 +1
+			STX DST32 +1
+			STX SRC24 +1
+			STX DST24 +1
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX SB_HI +30,Y
+			STX SRC31 +2
+			DEX
+			STX SRC23 +2
+			DEX
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			
+			LDX TB_HI +30,Y
+			STX DST31 +2
+			DEX
+			STX DST23 +2
+			DEX
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+
+			LDX SC_LO +30,Y
+			STX SRC31 +1
+			STX DST31 +1
+			STX SRC23 +1
+			STX DST23 +1
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX SB_HI +29,Y
+			STX SRC30 +2
+			DEX
+			STX SRC22 +2
+			DEX
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+
+			LDX TB_HI +29,Y
+			STX DST30 +2
+			DEX
+			STX DST22 +2
+			DEX
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+
+			LDX SC_LO +29,Y
+			STX SRC30 +1
+			STX DST30 +1
+			STX SRC22 +1
+			STX DST22 +1
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX SB_HI +28,Y
+			STX SRC29 +2
+			DEX
+			STX SRC21 +2
+			DEX
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+
+			LDX TB_HI +28,Y
+			STX DST29 +2
+			DEX
+			STX DST21 +2
+			DEX
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+
+			LDX SC_LO +28,Y
+			STX SRC29 +1
+			STX DST29 +1
+			STX SRC21 +1
+			STX DST21 +1
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX SB_HI +27,Y
+			STX SRC28 +2
+			DEX
+			STX SRC20 +2
+			DEX
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			
+			LDX TB_HI +27,Y
+			STX DST28 +2
+			DEX
+			STX DST20 +2
+			DEX
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			
+			LDX SC_LO +27,Y
+			STX SRC28 +1
+			STX DST28 +1
+			STX SRC20 +1
+			STX DST20 +1
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX SB_HI +26,Y
+			STX SRC27 +2
+			DEX
+			STX SRC19 +2
+			DEX
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			
+			LDX TB_HI +26,Y
+			STX DST27 +2
+			DEX
+			STX DST19 +2
+			DEX
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+
+			LDX SC_LO +26,Y
+			STX SRC27 +1
+			STX DST27 +1
+			STX SRC19 +1
+			STX DST19 +1
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX SB_HI +25,Y
+			STX SRC26 +2
+			DEX
+			STX SRC18 +2
+			DEX
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			
+			LDX TB_HI +25,Y
+			STX DST26 +2
+			DEX
+			STX DST18 +2
+			DEX
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+
+			LDX SC_LO +25,Y
+			STX SRC26 +1
+			STX DST26 +1
+			STX SRC18 +1
+			STX DST18 +1
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC33  			LDA $ABCD,Y
+DST33  			STA $ABCD,Y
+
+SRC32  			LDA $ABCD,Y
+DST32  			STA $ABCD,Y
+SRC31  			LDA $ABCD,Y
+DST31  			STA $ABCD,Y
+SRC30  			LDA $ABCD,Y
+DST30  			STA $ABCD,Y
+SRC29  			LDA $ABCD,Y
+DST29  			STA $ABCD,Y
+SRC28  			LDA $ABCD,Y
+DST28  			STA $ABCD,Y
+SRC27  			LDA $ABCD,Y
+DST27  			STA $ABCD,Y
+SRC26  			LDA $ABCD,Y
+DST26  			STA $ABCD,Y
+SRC25  			LDA $ABCD,Y
+DST25  			STA $ABCD,Y
+
+SRC24  			LDA $ABCD,Y
+DST24  			STA $ABCD,Y
+SRC23  			LDA $ABCD,Y
+DST23  			STA $ABCD,Y
+SRC22  			LDA $ABCD,Y
+DST22  			STA $ABCD,Y
+SRC21  			LDA $ABCD,Y
+DST21  			STA $ABCD,Y
+SRC20  			LDA $ABCD,Y
+DST20  			STA $ABCD,Y
+SRC19  			LDA $ABCD,Y
+DST19  			STA $ABCD,Y
+SRC18  			LDA $ABCD,Y
+DST18  			STA $ABCD,Y
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				DEX
+				BMI EXIT
+			INY
+			JMP LOOP
+EXIT		RTS
+.ENDL
+
+.LOCAL	TSB_SCN
+			STA REGY
+			LDA SPRITE_TSB_SCN_LO,Y
+			STA TSB_SCN_JMP+1
+			LDA SPRITE_TSB_SCN_HI,Y
+			STA TSB_SCN_JMP+2
+			LDA SPRITE_SCB_TSB_SIZE,Y
+			LDY REGY
+TSB_SCN_JMP JMP $ABCD
+.ENDL
+
+.LOCAL	TSB_SCN_08 ; copy from screen buffer to temp buffer - size 1
+			STA SPR_CNT
+			TXA
+
+			LDX TB_HI +8,Y 
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+			LDX SC_HI +8,Y 
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+			LDX SC_LO +8,Y
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX TB_HI +7,Y 
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			LDX SC_HI +7,Y 
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+			LDX SC_LO +7,Y
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX TB_HI +6,Y 
+			STX SRC07 +2
+			LDX SC_HI +6,Y 
+			STX DST07 +2
+			LDX SC_LO +6,Y
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX TB_HI +5,Y 
+			STX SRC06 +2
+			LDX SC_HI +5,Y 
+			STX DST06 +2
+			LDX SC_LO +5,Y
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX TB_HI +4,Y 
+			STX SRC05 +2
+			LDX SC_HI +4,Y 
+			STX DST05 +2
+			LDX SC_LO +4,Y
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX TB_HI +3,Y 
+			STX SRC04 +2
+			LDX SC_HI +3,Y 
+			STX DST04 +2
+			LDX SC_LO +3,Y
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX TB_HI +2,Y 
+			STX SRC03 +2
+			LDX SC_HI +2,Y 
+			STX DST03 +2
+			LDX SC_LO +2,Y
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX TB_HI +1,Y 
+			STX SRC02 +2
+			LDX SC_HI +1,Y 
+			STX DST02 +2
+			LDX SC_LO +1,Y
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				INY
+				DEX
+				BPL LOOP
+			RTS
+.ENDL
+
+.LOCAL	TSB_SCN_16 ; copy from screen buffer to temp buffer - size 1
+			STA SPR_CNT
+			TXA
+
+			LDX TB_HI +16,Y 
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+			LDX SC_HI +16,Y 
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+			LDX SC_LO +16,Y
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX TB_HI +15,Y 
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			LDX SC_HI +15,Y 
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+			LDX SC_LO +15,Y
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX TB_HI +14,Y 
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			LDX SC_HI +14,Y 
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+			LDX SC_LO +14,Y
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX TB_HI +13,Y 
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+			LDX SC_HI +13,Y 
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+			LDX SC_LO +13,Y
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX TB_HI +12,Y 
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+			LDX SC_HI +12,Y 
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+			LDX SC_LO +12,Y
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX TB_HI +11,Y 
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			LDX SC_HI +11,Y 
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			LDX SC_LO +11,Y
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX TB_HI +10,Y 
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			LDX SC_HI +10,Y 
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+			LDX SC_LO +10,Y
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX TB_HI +9,Y 
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			LDX SC_HI +9,Y 
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+			LDX SC_LO +9,Y
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				INY
+				DEX
+				BPL LOOP
+			RTS
+.ENDL
+
+.LOCAL	TSB_SCN_24 ; copy from screen buffer to temp buffer - size 1
+			STA SPR_CNT
+			TXA
+
+			LDX TB_HI +24,Y 
+			STX SRC25 +2
+			DEX
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+			LDX SC_HI +24,Y 
+			STX DST25 +2
+			DEX
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+			LDX SC_LO +24,Y
+			STX SRC25 +1
+			STX DST25 +1
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX TB_HI +23,Y 
+			STX SRC24 +2
+			DEX
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			LDX SC_HI +23,Y 
+			STX DST24 +2
+			DEX
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+			LDX SC_LO +23,Y
+			STX SRC24 +1
+			STX DST24 +1
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX TB_HI +22,Y 
+			STX SRC23 +2
+			DEX
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			LDX SC_HI +22,Y 
+			STX DST23 +2
+			DEX
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+			LDX SC_LO +22,Y
+			STX SRC23 +1
+			STX DST23 +1
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX TB_HI +21,Y 
+			STX SRC22 +2
+			DEX
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+			LDX SC_HI +21,Y 
+			STX DST22 +2
+			DEX
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+			LDX SC_LO +21,Y
+			STX SRC22 +1
+			STX DST22 +1
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX TB_HI +20,Y 
+			STX SRC21 +2
+			DEX
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+			LDX SC_HI +20,Y 
+			STX DST21 +2
+			DEX
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+			LDX SC_LO +20,Y
+			STX SRC21 +1
+			STX DST21 +1
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX TB_HI +19,Y 
+			STX SRC20 +2
+			DEX
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			LDX SC_HI +19,Y 
+			STX DST20 +2
+			DEX
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			LDX SC_LO +19,Y
+			STX SRC20 +1
+			STX DST20 +1
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX TB_HI +18,Y 
+			STX SRC19 +2
+			DEX
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			LDX SC_HI +18,Y 
+			STX DST19 +2
+			DEX
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+			LDX SC_LO +18,Y
+			STX SRC19 +1
+			STX DST19 +1
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX TB_HI +17,Y 
+			STX SRC18 +2
+			DEX
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			LDX SC_HI +17,Y 
+			STX DST18 +2
+			DEX
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+			LDX SC_LO +17,Y
+			STX SRC18 +1
+			STX DST18 +1
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC25  			LDA $ABCD,Y
+DST25  			STA $ABCD,Y
+
+SRC24  			LDA $ABCD,Y
+DST24  			STA $ABCD,Y
+SRC23  			LDA $ABCD,Y
+DST23  			STA $ABCD,Y
+SRC22  			LDA $ABCD,Y
+DST22  			STA $ABCD,Y
+SRC21  			LDA $ABCD,Y
+DST21  			STA $ABCD,Y
+SRC20  			LDA $ABCD,Y
+DST20  			STA $ABCD,Y
+SRC19  			LDA $ABCD,Y
+DST19  			STA $ABCD,Y
+SRC18  			LDA $ABCD,Y
+DST18  			STA $ABCD,Y
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				DEX
+				BMI EXIT
+			INY
+			JMP LOOP				
+EXIT		RTS
+.ENDL
+
+.LOCAL	TSB_SCN_32 ; copy from screen buffer to temp buffer - size 1
+			STA SPR_CNT
+			TXA
+
+			LDX TB_HI +32,Y 
+			STX SRC33 +2
+			DEX
+			STX SRC25 +2
+			DEX
+			STX SRC17 +2
+			DEX
+			STX SRC09 +2
+			DEX
+			STX SRC01 +2
+			LDX SC_HI +32,Y 
+			STX DST33 +2
+			DEX
+			STX DST25 +2
+			DEX
+			STX DST17 +2
+			DEX
+			STX DST09 +2
+			DEX
+			STX DST01 +2
+			LDX SC_LO +32,Y
+			STX SRC33 +1
+			STX DST33 +1
+			STX SRC25 +1
+			STX DST25 +1
+			STX SRC17 +1
+			STX DST17 +1
+			STX SRC09 +1
+			STX DST09 +1
+			STX SRC01 +1
+			STX DST01 +1
+
+			LDX TB_HI +31,Y 
+			STX SRC32 +2
+			DEX
+			STX SRC24 +2
+			DEX
+			STX SRC16 +2
+			DEX
+			STX SRC08 +2
+			DEX
+			STX SRC00 +2
+			LDX SC_HI +31,Y 
+			STX DST32 +2
+			DEX
+			STX DST24 +2
+			DEX
+			STX DST16 +2
+			DEX
+			STX DST08 +2
+			DEX
+			STX DST00 +2
+			LDX SC_LO +31,Y
+			STX SRC32 +1
+			STX DST32 +1
+			STX SRC24 +1
+			STX DST24 +1
+			STX SRC16 +1
+			STX DST16 +1
+			STX SRC08 +1
+			STX DST08 +1
+			STX SRC00 +1
+			STX DST00 +1
+
+			LDX TB_HI +30,Y 
+			STX SRC31 +2
+			DEX
+			STX SRC23 +2
+			DEX
+			STX SRC15 +2
+			DEX
+			STX SRC07 +2
+			LDX SC_HI +30,Y 
+			STX DST31 +2
+			DEX
+			STX DST23 +2
+			DEX
+			STX DST15 +2
+			DEX
+			STX DST07 +2
+			LDX SC_LO +30,Y
+			STX SRC31 +1
+			STX DST31 +1
+			STX SRC23 +1
+			STX DST23 +1
+			STX SRC15 +1
+			STX DST15 +1
+			STX SRC07 +1
+			STX DST07 +1
+
+			LDX TB_HI +29,Y 
+			STX SRC30 +2
+			DEX
+			STX SRC22 +2
+			DEX
+			STX SRC14 +2
+			DEX
+			STX SRC06 +2
+			LDX SC_HI +29,Y 
+			STX DST30 +2
+			DEX
+			STX DST22 +2
+			DEX
+			STX DST14 +2
+			DEX
+			STX DST06 +2
+			LDX SC_LO +29,Y
+			STX SRC30 +1
+			STX DST30 +1
+			STX SRC22 +1
+			STX DST22 +1
+			STX SRC14 +1
+			STX DST14 +1
+			STX SRC06 +1
+			STX DST06 +1
+
+			LDX TB_HI +28,Y 
+			STX SRC29 +2
+			DEX
+			STX SRC21 +2
+			DEX
+			STX SRC13 +2
+			DEX
+			STX SRC05 +2
+			LDX SC_HI +28,Y 
+			STX DST29 +2
+			DEX
+			STX DST21 +2
+			DEX
+			STX DST13 +2
+			DEX
+			STX DST05 +2
+			LDX SC_LO +28,Y
+			STX SRC29 +1
+			STX DST29 +1
+			STX SRC21 +1
+			STX DST21 +1
+			STX SRC13 +1
+			STX DST13 +1
+			STX SRC05 +1
+			STX DST05 +1
+
+			LDX TB_HI +27,Y 
+			STX SRC28 +2
+			DEX
+			STX SRC20 +2
+			DEX
+			STX SRC12 +2
+			DEX
+			STX SRC04 +2
+			LDX SC_HI +27,Y 
+			STX DST28 +2
+			DEX
+			STX DST20 +2
+			DEX
+			STX DST12 +2
+			DEX
+			STX DST04 +2
+			LDX SC_LO +27,Y
+			STX SRC28 +1
+			STX DST28 +1
+			STX SRC20 +1
+			STX DST20 +1
+			STX SRC12 +1
+			STX DST12 +1
+			STX SRC04 +1
+			STX DST04 +1
+
+			LDX TB_HI +26,Y 
+			STX SRC27 +2
+			DEX
+			STX SRC19 +2
+			DEX
+			STX SRC11 +2
+			DEX
+			STX SRC03 +2
+			LDX SC_HI +26,Y 
+			STX DST27 +2
+			DEX
+			STX DST19 +2
+			DEX
+			STX DST11 +2
+			DEX
+			STX DST03 +2
+			LDX SC_LO +26,Y
+			STX SRC27 +1
+			STX DST27 +1
+			STX SRC19 +1
+			STX DST19 +1
+			STX SRC11 +1
+			STX DST11 +1
+			STX SRC03 +1
+			STX DST03 +1
+
+			LDX TB_HI +25,Y 
+			STX SRC26 +2
+			DEX
+			STX SRC18 +2
+			DEX
+			STX SRC10 +2
+			DEX
+			STX SRC02 +2
+			LDX SC_HI +25,Y 
+			STX DST26 +2
+			DEX
+			STX DST18 +2
+			DEX
+			STX DST10 +2
+			DEX
+			STX DST02 +2
+			LDX SC_LO +25,Y
+			STX SRC26 +1
+			STX DST26 +1
+			STX SRC18 +1
+			STX DST18 +1
+			STX SRC10 +1
+			STX DST10 +1
+			STX SRC02 +1
+			STX DST02 +1
+
+			TAX
+			LDY SCR_HOR-4,X
+			LDX SPR_CNT
+			INX
+LOOP
+SRC33  			LDA $ABCD,Y
+DST33  			STA $ABCD,Y
+
+SRC32  			LDA $ABCD,Y
+DST32  			STA $ABCD,Y
+SRC31  			LDA $ABCD,Y
+DST31  			STA $ABCD,Y
+SRC30  			LDA $ABCD,Y
+DST30  			STA $ABCD,Y
+SRC29  			LDA $ABCD,Y
+DST29  			STA $ABCD,Y
+SRC28  			LDA $ABCD,Y
+DST28  			STA $ABCD,Y
+SRC27  			LDA $ABCD,Y
+DST27  			STA $ABCD,Y
+SRC26  			LDA $ABCD,Y
+DST26  			STA $ABCD,Y
+SRC25  			LDA $ABCD,Y
+DST25  			STA $ABCD,Y
+
+SRC24  			LDA $ABCD,Y
+DST24  			STA $ABCD,Y
+SRC23  			LDA $ABCD,Y
+DST23  			STA $ABCD,Y
+SRC22  			LDA $ABCD,Y
+DST22  			STA $ABCD,Y
+SRC21  			LDA $ABCD,Y
+DST21  			STA $ABCD,Y
+SRC20  			LDA $ABCD,Y
+DST20  			STA $ABCD,Y
+SRC19  			LDA $ABCD,Y
+DST19  			STA $ABCD,Y
+SRC18  			LDA $ABCD,Y
+DST18  			STA $ABCD,Y
+SRC17  			LDA $ABCD,Y
+DST17  			STA $ABCD,Y
+
+SRC16  			LDA $ABCD,Y
+DST16  			STA $ABCD,Y
+SRC15  			LDA $ABCD,Y
+DST15  			STA $ABCD,Y
+SRC14  			LDA $ABCD,Y
+DST14  			STA $ABCD,Y
+SRC13  			LDA $ABCD,Y
+DST13  			STA $ABCD,Y
+SRC12  			LDA $ABCD,Y
+DST12  			STA $ABCD,Y
+SRC11  			LDA $ABCD,Y
+DST11  			STA $ABCD,Y
+SRC10  			LDA $ABCD,Y
+DST10  			STA $ABCD,Y
+SRC09  			LDA $ABCD,Y
+DST09  			STA $ABCD,Y
+
+SRC08  			LDA $ABCD,Y
+DST08  			STA $ABCD,Y
+SRC07  			LDA $ABCD,Y
+DST07  			STA $ABCD,Y
+SRC06  			LDA $ABCD,Y
+DST06  			STA $ABCD,Y
+SRC05  			LDA $ABCD,Y
+DST05  			STA $ABCD,Y
+SRC04  			LDA $ABCD,Y
+DST04  			STA $ABCD,Y
+SRC03  			LDA $ABCD,Y
+DST03  			STA $ABCD,Y
+SRC02  			LDA $ABCD,Y
+DST02  			STA $ABCD,Y
+SRC01  			LDA $ABCD,Y
+DST01  			STA $ABCD,Y
+
+SRC00  			LDA $ABCD,Y
+DST00  			STA $ABCD,Y
+
+				DEX
+				BMI EXIT
+			INY
+			JMP LOOP				
+EXIT		RTS
+.ENDL
+
+.LOCAL	SPR_TSB	; copy sprite to temp buffer
+			STX REGX ; H
+			STA REGY ; V
+
+			LDA SPRITE_AND_LO_LO,Y
+			STA AND_LO+1
+			LDA SPRITE_AND_LO_HI,Y
+			STA AND_LO+2
+			LDA SPRITE_AND_HI_LO,Y
+			STA AND_HI+1
+			LDA SPRITE_AND_HI_HI,Y
+			STA AND_HI+2
+  
+			LDA SPRITE_ORA_LO_LO,Y
+			STA ORA_LO+1
+			LDA SPRITE_ORA_LO_HI,Y
+			STA ORA_LO+2
+			LDA SPRITE_ORA_HI_LO,Y
+			STA ORA_HI+1
+			LDA SPRITE_ORA_HI_HI,Y
+			STA ORA_HI+2
+
+			TXA
+			AND     #3
+			TAX
+
+AND_LO      LDA $ABCD,X
+            STA SPR_AND
+AND_HI      LDA $ABCD,X
+            STA SPR_AND +1
+ORA_LO      LDA $ABCD,X
+            STA SPR_ORA
+ORA_HI      LDA $ABCD,X
+            STA SPR_ORA +1
+  
+			LDX SPRITE_TYPE,Y
+ 
+			LDA SPRITE_SPR_TMP_LO,X
+			STA SPRN_TMPB+1
+			LDA SPRITE_SPR_TMP_HI,X
+			STA SPRN_TMPB+2
+			LDA SPRITE_SPR_TMP_SIZE,X
+ 
+			LDX REGX
+			LDY REGY
+SPRN_TMPB	JMP $ABCD
+.ENDL
+
+;.MACRO	SPR_TMP_HI	SRC, DST, VL ; buffer to temp
+;			LDX  TB_HI + :3,Y 
+;			STX  :1 +2
+;			STX  :2 +2
+;.ENDM
+
+;.MACRO	SPR_TMP_LO	SRC, DST, VL ; buffer to temp
+;			LDA  SC_LO + :3,Y
+;.ENDM
+
+.MACRO	INCXY
+			INX
+			BNE CONT
+				INY
+CONT
+.ENDM
+
+.LOCAL	SPR_TSB_08 ; copy sprite to temp buffer 
+			STA SPR_CNT
+			STX REGX
+			TYA
+
+			LDX SPR_AND
+			LDY SPR_AND +1
+			STX SPA01 +1
+			STY SPA01 +2
+			INCXY 
+			STX SPA02 +1
+			STY SPA02 +2
+			INCXY 
+			STX SPA03 +1
+			STY SPA03 +2
+			INCXY 
+			STX SPA04 +1
+			STY SPA04 +2
+			INCXY 
+			STX SPA05 +1
+			STY SPA05 +2
+			INCXY 
+			STX SPA06 +1
+			STY SPA06 +2
+			INCXY 
+			STX SPA07 +1
+			STY SPA07 +2
+			INCXY 
+			STX SPA08 +1
+			STY SPA08 +2
+
+			LDX SPR_ORA
+			LDY SPR_ORA +1
+			STX SPO01 +1
+			STY SPO01 +2
+			INCXY 
+			STX SPO02 +1
+			STY SPO02 +2
+			INCXY 
+			STX SPO03 +1
+			STY SPO03 +2
+			INCXY 
+			STX SPO04 +1
+			STY SPO04 +2
+			INCXY 
+			STX SPO05 +1
+			STY SPO05 +2
+			INCXY 
+			STX SPO06 +1
+			STY SPO06 +2
+			INCXY 
+			STX SPO07 +1
+			STY SPO07 +2
+			INCXY 
+			STX SPO08 +1
+			STY SPO08 +2
+ 
+ 			TAY 
+ 
+ 			LDX TB_HI +7,Y			
+			STX SRC08 +2
+			STX DST08 +2
+
+			LDA SC_LO +7,Y
+			STA SRC08 +1
+			STA DST08 +1
+
+			LDX TB_HI +6,Y
+			STX SRC07 +2
+			STX DST07 +2
+
+			LDA SC_LO +6,Y
+			STA SRC07 +1
+			STA DST07 +1
+			
+			LDX TB_HI +5,Y
+			STX SRC06 +2
+			STX DST06 +2
+
+			LDA SC_LO +5,Y
+			STA SRC06 +1
+			STA DST06 +1
+			
+			LDX TB_HI +4,Y
+			STX SRC05 +2
+			STX DST05 +2
+
+			LDA SC_LO +4,Y
+			STA SRC05 +1
+			STA DST05 +1
+
+			LDX TB_HI +3,Y
+			STX SRC04 +2
+			STX DST04 +2
+
+			LDA SC_LO +3,Y
+			STA SRC04 +1
+			STA DST04 +1
+
+			LDX TB_HI +2,Y
+			STX SRC03 +2
+			STX DST03 +2
+
+			LDA SC_LO +2,Y
+			STA SRC03 +1
+			STA DST03 +1
+
+			LDX TB_HI +1,Y
+			STX SRC02 +2
+			STX DST02 +2
+
+			LDA SC_LO +1,Y
+			STA SRC02 +1
+			STA DST02 +1
+
+			LDX TB_HI +0,Y
+			STX SRC01 +2
+			STX DST01 +2
+
+			LDA SC_LO +0,Y
+			STA SRC01 +1
+			STA DST01 +1
+
+			LDX REGX
+			LDY SCR_HOR,X
+			LDX SPR_CNT ; 24 16 8 0 (needs to be colums*rows)
+			SEC
+LOOP
+SRC01 			LDA $ABCD,Y
+SPA01 			AND $ABCD,X
+SPO01 			ORA $ABCD,X
+DST01 			STA $ABCD,Y
+
+SRC02 			LDA $ABCD,Y
+SPA02 			AND $ABCD,X
+SPO02 			ORA $ABCD,X
+DST02 			STA $ABCD,Y
+     
+SRC03 			LDA $ABCD,Y
+SPA03 			AND $ABCD,X
+SPO03 			ORA $ABCD,X
+DST03 			STA $ABCD,Y
+
+SRC04 			LDA $ABCD,Y
+SPA04 			AND $ABCD,X
+SPO04 			ORA $ABCD,X
+DST04 			STA $ABCD,Y
+
+SRC05 			LDA $ABCD,Y
+SPA05 			AND $ABCD,X
+SPO05 			ORA $ABCD,X
+DST05 			STA $ABCD,Y
+
+SRC06 			LDA $ABCD,Y
+SPA06 			AND $ABCD,X
+SPO06 			ORA $ABCD,X
+DST06 			STA $ABCD,Y
+
+SRC07 			LDA $ABCD,Y
+SPA07 			AND $ABCD,X
+SPO07 			ORA $ABCD,X
+DST07 			STA $ABCD,Y
+
+SRC08 			LDA $ABCD,Y
+SPA08 			AND $ABCD,X
+SPO08 			ORA $ABCD,X
+DST08 			STA $ABCD,Y
+
+				INY
+				TXA
+				SBC #8 ; -1 ; carry clear
+				TAX
+
+			BNE LOOP
+		RTS
+.ENDL
+
+.LOCAL	SPR_TSB_16 ; copy sprite to temp buffer 
+			STA SPR_CNT
+			STX REGX
+			TYA
+
+			LDX SPR_AND
+			LDY SPR_AND +1
+			STX SPA01 +1
+			STY SPA01 +2
+			INCXY 
+			STX SPA02 +1
+			STY SPA02 +2
+			INCXY 
+			STX SPA03 +1
+			STY SPA03 +2
+			INCXY 
+			STX SPA04 +1
+			STY SPA04 +2
+			INCXY 
+			STX SPA05 +1
+			STY SPA05 +2
+			INCXY 
+			STX SPA06 +1
+			STY SPA06 +2
+			INCXY 
+			STX SPA07 +1
+			STY SPA07 +2
+			INCXY 
+			STX SPA08 +1
+			STY SPA08 +2
+			INCXY 
+			STX SPA09 +1
+			STY SPA09 +2
+			INCXY 
+			STX SPA10 +1
+			STY SPA10 +2
+			INCXY 
+			STX SPA11 +1
+			STY SPA11 +2
+			INCXY
+			STX SPA12 +1
+			STY SPA12 +2
+			INCXY 
+			STX SPA13 +1
+			STY SPA13 +2
+			INCXY 
+			STX SPA14 +1
+			STY SPA14 +2
+			INCXY 
+			STX SPA15 +1
+			STY SPA15 +2
+			INCXY 
+			STX SPA16 +1
+			STY SPA16 +2
+
+			LDX SPR_ORA
+			LDY SPR_ORA +1
+			STX SPO01 +1
+			STY SPO01 +2
+			INCXY 
+			STX SPO02 +1
+			STY SPO02 +2
+			INCXY 
+			STX SPO03 +1
+			STY SPO03 +2
+			INCXY 
+			STX SPO04 +1
+			STY SPO04 +2
+			INCXY 
+			STX SPO05 +1
+			STY SPO05 +2
+			INCXY 
+			STX SPO06 +1
+			STY SPO06 +2
+			INCXY 
+			STX SPO07 +1
+			STY SPO07 +2
+			INCXY 
+			STX SPO08 +1
+			STY SPO08 +2
+			INCXY 
+			STX SPO09 +1
+			STY SPO09 +2
+			INCXY 
+			STX SPO10 +1
+			STY SPO10 +2
+			INCXY 
+			STX SPO11 +1
+			STY SPO11 +2
+			INCXY 
+			STX SPO12 +1
+			STY SPO12 +2
+			INCXY 
+			STX SPO13 +1
+			STY SPO13 +2
+			INCXY 
+			STX SPO14 +1
+			STY SPO14 +2
+			INCXY 
+			STX SPO15 +1
+			STY SPO15 +2
+			INCXY 
+			STX SPO16 +1
+			STY SPO16 +2
+
+			TAY
+			
+			LDX TB_HI +15,Y			
+			STX SRC16 +2
+			STX DST16 +2
+			DEX
+			STX SRC08 +2
+			STX DST08 +2
+
+			LDA SC_LO +15,Y
+			STA SRC16 +1
+			STA DST16 +1
+			STA SRC08 +1
+			STA DST08 +1
+
+			LDX TB_HI +14,Y
+			STX SRC15 +2
+			STX DST15 +2
+			DEX
+			STX SRC07 +2
+			STX DST07 +2
+
+			LDA SC_LO +14,Y
+			STA SRC15 +1
+			STA DST15 +1
+			STA SRC07 +1
+			STA DST07 +1
+			
+			LDX TB_HI +13,Y
+			STX SRC14 +2
+			STX DST14 +2
+			DEX
+			STX SRC06 +2
+			STX DST06 +2
+
+			LDA SC_LO +13,Y
+			STA SRC14 +1
+			STA DST14 +1
+			STA SRC06 +1
+			STA DST06 +1
+			
+			LDX TB_HI +12,Y
+			STX SRC13 +2
+			STX DST13 +2
+			DEX
+			STX SRC05 +2
+			STX DST05 +2
+
+			LDA SC_LO +12,Y
+			STA SRC13 +1
+			STA DST13 +1
+			STA SRC05 +1
+			STA DST05 +1
+
+			LDX TB_HI +11,Y
+			STX SRC12 +2
+			STX DST12 +2
+			DEX
+			STX SRC04 +2
+			STX DST04 +2
+
+			LDA SC_LO +11,Y
+			STA SRC12 +1
+			STA DST12 +1
+			STA SRC04 +1
+			STA DST04 +1
+
+			LDX TB_HI +10,Y
+			STX SRC11 +2
+			STX DST11 +2
+			DEX
+			STX SRC03 +2
+			STX DST03 +2
+
+			LDA SC_LO +10,Y
+			STA SRC11 +1
+			STA DST11 +1
+			STA SRC03 +1
+			STA DST03 +1
+
+			LDX TB_HI +9,Y
+			STX SRC10 +2
+			STX DST10 +2
+			DEX
+			STX SRC02 +2
+			STX DST02 +2
+
+			LDA SC_LO +9,Y
+			STA SRC10 +1
+			STA DST10 +1
+			STA SRC02 +1
+			STA DST02 +1
+
+			LDX TB_HI +8,Y
+			STX SRC09 +2
+			STX DST09 +2
+			DEX
+			STX SRC01 +2
+			STX DST01 +2
+
+			LDA SC_LO +8,Y
+			STA SRC09 +1
+			STA DST09 +1
+			STA SRC01 +1
+			STA DST01 +1
+
+			LDX REGX
+			LDY SCR_HOR,X
+			LDX SPR_CNT ; 24 16 8 0 (needs to be colums*rows)
+			SEC
+LOOP
+SRC01 			LDA $ABCD,Y
+SPA01 			AND $ABCD,X
+SPO01 			ORA $ABCD,X
+DST01 			STA $ABCD,Y
+
+SRC02 			LDA $ABCD,Y
+SPA02 			AND $ABCD,X
+SPO02 			ORA $ABCD,X
+DST02 			STA $ABCD,Y
+     
+SRC03 			LDA $ABCD,Y
+SPA03 			AND $ABCD,X
+SPO03 			ORA $ABCD,X
+DST03 			STA $ABCD,Y
+
+SRC04 			LDA $ABCD,Y
+SPA04 			AND $ABCD,X
+SPO04 			ORA $ABCD,X
+DST04 			STA $ABCD,Y
+
+SRC05 			LDA $ABCD,Y
+SPA05 			AND $ABCD,X
+SPO05 			ORA $ABCD,X
+DST05 			STA $ABCD,Y
+
+SRC06 			LDA $ABCD,Y
+SPA06 			AND $ABCD,X
+SPO06 			ORA $ABCD,X
+DST06 			STA $ABCD,Y
+
+SRC07 			LDA $ABCD,Y
+SPA07 			AND $ABCD,X
+SPO07 			ORA $ABCD,X
+DST07 			STA $ABCD,Y
+
+SRC08 			LDA $ABCD,Y
+SPA08 			AND $ABCD,X
+SPO08 			ORA $ABCD,X
+DST08 			STA $ABCD,Y
+
+SRC09 			LDA $ABCD,Y
+SPA09 			AND $ABCD,X
+SPO09 			ORA $ABCD,X
+DST09 			STA $ABCD,Y
+
+SRC10 			LDA $ABCD,Y
+SPA10 			AND $ABCD,X
+SPO10 			ORA $ABCD,X
+DST10 			STA $ABCD,Y
+
+SRC11 			LDA $ABCD,Y
+SPA11 			AND $ABCD,X
+SPO11 			ORA $ABCD,X
+DST11 			STA $ABCD,Y
+
+SRC12 			LDA $ABCD,Y
+SPA12 			AND $ABCD,X
+SPO12 			ORA $ABCD,X
+DST12 			STA $ABCD,Y
+
+SRC13 			LDA $ABCD,Y
+SPA13 			AND $ABCD,X
+SPO13 			ORA $ABCD,X
+DST13 			STA $ABCD,Y
+
+SRC14 			LDA $ABCD,Y
+SPA14 			AND $ABCD,X
+SPO14 			ORA $ABCD,X
+DST14 			STA $ABCD,Y
+
+SRC15 			LDA $ABCD,Y
+SPA15 			AND $ABCD,X
+SPO15 			ORA $ABCD,X
+DST15 			STA $ABCD,Y
+
+SRC16 			LDA $ABCD,Y
+SPA16 			AND $ABCD,X
+SPO16 			ORA $ABCD,X
+DST16 			STA $ABCD,Y
+
+				TXA
+				SBC #16 ; -1 ; carry clear
+				BEQ EXIT
+			TAX
+			INY
+			JMP LOOP
+EXIT  	RTS
+.ENDL
+
+.LOCAL	SPR_TSB_24 ; copy sprite to temp buffer 
+			STA SPR_CNT
+			STX REGX
+			TYA
+			
+			LDX SPR_AND
+			LDY SPR_AND +1
+			STX SPA01 +1
+			STY SPA01 +2
+			INCXY 
+			STX SPA02 +1
+			STY SPA02 +2
+			INCXY 
+			STX SPA03 +1
+			STY SPA03 +2
+			INCXY 
+			STX SPA04 +1
+			STY SPA04 +2
+			INCXY 
+			STX SPA05 +1
+			STY SPA05 +2
+			INCXY 
+			STX SPA06 +1
+			STY SPA06 +2
+			INCXY 
+			STX SPA07 +1
+			STY SPA07 +2
+			INCXY 
+			STX SPA08 +1
+			STY SPA08 +2
+			INCXY 
+			STX SPA09 +1
+			STY SPA09 +2
+			INCXY 
+			STX SPA10 +1
+			STY SPA10 +2
+			INCXY 
+			STX SPA11 +1
+			STY SPA11 +2
+			INCXY
+			STX SPA12 +1
+			STY SPA12 +2
+			INCXY 
+			STX SPA13 +1
+			STY SPA13 +2
+			INCXY 
+			STX SPA14 +1
+			STY SPA14 +2
+			INCXY 
+			STX SPA15 +1
+			STY SPA15 +2
+			INCXY 
+			STX SPA16 +1
+			STY SPA16 +2
+			INCXY 
+			STX SPA17 +1
+			STY SPA17 +2
+			INCXY 
+			STX SPA18 +1
+			STY SPA18 +2
+			INCXY 
+			STX SPA19 +1
+			STY SPA19 +2
+			INCXY 
+			STX SPA20 +1
+			STY SPA20 +2
+			INCXY 
+			STX SPA21 +1
+			STY SPA21 +2
+			INCXY 
+			STX SPA22 +1
+			STY SPA22 +2
+			INCXY 
+			STX SPA23 +1
+			STY SPA23 +2
+			INCXY 
+			STX SPA24 +1
+			STY SPA24 +2
+
+			LDX SPR_ORA
+			LDY SPR_ORA +1
+			STX SPO01 +1
+			STY SPO01 +2
+			INCXY 
+			STX SPO02 +1
+			STY SPO02 +2
+			INCXY 
+			STX SPO03 +1
+			STY SPO03 +2
+			INCXY 
+			STX SPO04 +1
+			STY SPO04 +2
+			INCXY 
+			STX SPO05 +1
+			STY SPO05 +2
+			INCXY 
+			STX SPO06 +1
+			STY SPO06 +2
+			INCXY 
+			STX SPO07 +1
+			STY SPO07 +2
+			INCXY 
+			STX SPO08 +1
+			STY SPO08 +2
+			INCXY 
+			STX SPO09 +1
+			STY SPO09 +2
+			INCXY 
+			STX SPO10 +1
+			STY SPO10 +2
+			INCXY 
+			STX SPO11 +1
+			STY SPO11 +2
+			INCXY 
+			STX SPO12 +1
+			STY SPO12 +2
+			INCXY 
+			STX SPO13 +1
+			STY SPO13 +2
+			INCXY 
+			STX SPO14 +1
+			STY SPO14 +2
+			INCXY 
+			STX SPO15 +1
+			STY SPO15 +2
+			INCXY 
+			STX SPO16 +1
+			STY SPO16 +2
+			INCXY 
+			STX SPO17 +1
+			STY SPO17 +2
+			INCXY 
+			STX SPO18 +1
+			STY SPO18 +2
+			INCXY 
+			STX SPO19 +1
+			STY SPO19 +2
+			INCXY 
+			STX SPO20 +1
+			STY SPO20 +2
+			INCXY 
+			STX SPO21 +1
+			STY SPO21 +2
+			INCXY 
+			STX SPO22 +1
+			STY SPO22 +2
+			INCXY 
+			STX SPO23 +1
+			STY SPO23 +2
+			INCXY 
+			STX SPO24 +1
+			STY SPO24 +2
+
+			TAY
+
+			LDX TB_HI +23,Y			
+			STX SRC24 +2
+			STX DST24 +2
+			DEX
+			STX SRC16 +2
+			STX DST16 +2
+			DEX
+			STX SRC08 +2
+			STX DST08 +2
+
+			LDA SC_LO +23,Y
+			STA SRC24 +1
+			STA DST24 +1
+			STA SRC16 +1
+			STA DST16 +1
+			STA SRC08 +1
+			STA DST08 +1
+
+			LDX TB_HI +22,Y
+			STX SRC23 +2
+			STX DST23 +2
+			DEX
+			STX SRC15 +2
+			STX DST15 +2
+			DEX
+			STX SRC07 +2
+			STX DST07 +2
+
+			LDA SC_LO +22,Y
+			STA SRC23 +1
+			STA DST23 +1
+			STA SRC15 +1
+			STA DST15 +1
+			STA SRC07 +1
+			STA DST07 +1
+			
+			LDX TB_HI +21,Y
+			STX SRC22 +2
+			STX DST22 +2
+			DEX
+			STX SRC14 +2
+			STX DST14 +2
+			DEX
+			STX SRC06 +2
+			STX DST06 +2
+
+			LDA SC_LO +21,Y
+			STA SRC22 +1
+			STA DST22 +1
+			STA SRC14 +1
+			STA DST14 +1
+			STA SRC06 +1
+			STA DST06 +1
+			
+			LDX TB_HI +20,Y
+			STX SRC21 +2
+			STX DST21 +2
+			DEX
+			STX SRC13 +2
+			STX DST13 +2
+			DEX
+			STX SRC05 +2
+			STX DST05 +2
+
+			LDA SC_LO +20,Y
+			STA SRC21 +1
+			STA DST21 +1
+			STA SRC13 +1
+			STA DST13 +1
+			STA SRC05 +1
+			STA DST05 +1
+
+			LDX TB_HI +19,Y
+			STX SRC20 +2
+			STX DST20 +2
+			DEX
+			STX SRC12 +2
+			STX DST12 +2
+			DEX
+			STX SRC04 +2
+			STX DST04 +2
+
+			LDA SC_LO +19,Y
+			STA SRC20 +1
+			STA DST20 +1
+			STA SRC12 +1
+			STA DST12 +1
+			STA SRC04 +1
+			STA DST04 +1
+
+			LDX TB_HI +18,Y
+			STX SRC19 +2
+			STX DST19 +2
+			DEX
+			STX SRC11 +2
+			STX DST11 +2
+			DEX
+			STX SRC03 +2
+			STX DST03 +2
+
+			LDA SC_LO +18,Y
+			STA SRC19 +1
+			STA DST19 +1
+			STA SRC11 +1
+			STA DST11 +1
+			STA SRC03 +1
+			STA DST03 +1
+
+			LDX TB_HI +17,Y
+			STX SRC18 +2
+			STX DST18 +2
+			DEX
+			STX SRC10 +2
+			STX DST10 +2
+			DEX
+			STX SRC02 +2
+			STX DST02 +2
+
+			LDA SC_LO +17,Y
+			STA SRC18 +1
+			STA DST18 +1
+			STA SRC10 +1
+			STA DST10 +1
+			STA SRC02 +1
+			STA DST02 +1
+
+			LDX TB_HI +16,Y
+			STX SRC17 +2
+			STX DST17 +2
+			DEX
+			STX SRC09 +2
+			STX DST09 +2
+			DEX
+			STX SRC01 +2
+			STX DST01 +2
+
+			LDA SC_LO +16,Y
+			STA SRC17 +1
+			STA DST17 +1
+			STA SRC09 +1
+			STA DST09 +1
+			STA SRC01 +1
+			STA DST01 +1
+
+			LDX REGX
+			LDY SCR_HOR,X
+			LDX SPR_CNT ; 24 16 8 0 (needs to be colums*rows)
+			SEC
+LOOP
+SRC01 			LDA $ABCD,Y
+SPA01 			AND $ABCD,X
+SPO01 			ORA $ABCD,X
+DST01 			STA $ABCD,Y
+
+SRC02 			LDA $ABCD,Y
+SPA02 			AND $ABCD,X
+SPO02 			ORA $ABCD,X
+DST02 			STA $ABCD,Y
+     
+SRC03 			LDA $ABCD,Y
+SPA03 			AND $ABCD,X
+SPO03 			ORA $ABCD,X
+DST03 			STA $ABCD,Y
+
+SRC04 			LDA $ABCD,Y
+SPA04 			AND $ABCD,X
+SPO04 			ORA $ABCD,X
+DST04 			STA $ABCD,Y
+
+SRC05 			LDA $ABCD,Y
+SPA05 			AND $ABCD,X
+SPO05 			ORA $ABCD,X
+DST05 			STA $ABCD,Y
+
+SRC06 			LDA $ABCD,Y
+SPA06 			AND $ABCD,X
+SPO06 			ORA $ABCD,X
+DST06 			STA $ABCD,Y
+
+SRC07 			LDA $ABCD,Y
+SPA07 			AND $ABCD,X
+SPO07 			ORA $ABCD,X
+DST07 			STA $ABCD,Y
+
+SRC08 			LDA $ABCD,Y
+SPA08 			AND $ABCD,X
+SPO08 			ORA $ABCD,X
+DST08 			STA $ABCD,Y
+
+SRC09 			LDA $ABCD,Y
+SPA09 			AND $ABCD,X
+SPO09 			ORA $ABCD,X
+DST09 			STA $ABCD,Y
+
+SRC10 			LDA $ABCD,Y
+SPA10 			AND $ABCD,X
+SPO10 			ORA $ABCD,X
+DST10 			STA $ABCD,Y
+
+SRC11 			LDA $ABCD,Y
+SPA11 			AND $ABCD,X
+SPO11 			ORA $ABCD,X
+DST11 			STA $ABCD,Y
+
+SRC12 			LDA $ABCD,Y
+SPA12 			AND $ABCD,X
+SPO12 			ORA $ABCD,X
+DST12 			STA $ABCD,Y
+
+SRC13 			LDA $ABCD,Y
+SPA13 			AND $ABCD,X
+SPO13 			ORA $ABCD,X
+DST13 			STA $ABCD,Y
+
+SRC14 			LDA $ABCD,Y
+SPA14 			AND $ABCD,X
+SPO14 			ORA $ABCD,X
+DST14 			STA $ABCD,Y
+
+SRC15 			LDA $ABCD,Y
+SPA15 			AND $ABCD,X
+SPO15 			ORA $ABCD,X
+DST15 			STA $ABCD,Y
+
+SRC16 			LDA $ABCD,Y
+SPA16 			AND $ABCD,X
+SPO16 			ORA $ABCD,X
+DST16 			STA $ABCD,Y
+
+SRC17 			LDA $ABCD,Y
+SPA17 			AND $ABCD,X
+SPO17 			ORA $ABCD,X
+DST17 			STA $ABCD,Y
+
+SRC18 			LDA $ABCD,Y
+SPA18 			AND $ABCD,X
+SPO18 			ORA $ABCD,X
+DST18 			STA $ABCD,Y
+
+SRC19 			LDA $ABCD,Y
+SPA19 			AND $ABCD,X
+SPO19 			ORA $ABCD,X
+DST19 			STA $ABCD,Y
+
+SRC20 			LDA $ABCD,Y
+SPA20 			AND $ABCD,X
+SPO20 			ORA $ABCD,X
+DST20			STA $ABCD,Y
+
+SRC21 			LDA $ABCD,Y
+SPA21 			AND $ABCD,X
+SPO21 			ORA $ABCD,X
+DST21 			STA $ABCD,Y
+
+SRC22 			LDA $ABCD,Y
+SPA22 			AND $ABCD,X
+SPO22 			ORA $ABCD,X
+DST22 			STA $ABCD,Y
+
+SRC23 			LDA $ABCD,Y
+SPA23 			AND $ABCD,X
+SPO23 			ORA $ABCD,X
+DST23 			STA $ABCD,Y
+
+SRC24 			LDA $ABCD,Y
+SPA24 			AND $ABCD,X
+SPO24 			ORA $ABCD,X
+DST24 			STA $ABCD,Y
+
+				TXA
+				SBC #24 ; -1 ; carry clear
+				BEQ EXIT
+			TAX
+			INY
+			JMP LOOP
+EXIT  	RTS
+.ENDL
+
+.LOCAL	SPR_TSB_32 ; copy sprite to temp buffer 
+			STA SPR_CNT
+			STX REGX
+			TYA 
+
+			LDX SPR_AND
+			LDY SPR_AND +1
+			STX SPA01 +1
+			STY SPA01 +2
+			INCXY 
+			STX SPA02 +1
+			STY SPA02 +2
+			INCXY 
+			STX SPA03 +1
+			STY SPA03 +2
+			INCXY 
+			STX SPA04 +1
+			STY SPA04 +2
+			INCXY 
+			STX SPA05 +1
+			STY SPA05 +2
+			INCXY 
+			STX SPA06 +1
+			STY SPA06 +2
+			INCXY 
+			STX SPA07 +1
+			STY SPA07 +2
+			INCXY 
+			STX SPA08 +1
+			STY SPA08 +2
+			INCXY 
+			STX SPA09 +1
+			STY SPA09 +2
+			INCXY 
+			STX SPA10 +1
+			STY SPA10 +2
+			INCXY 
+			STX SPA11 +1
+			STY SPA11 +2
+			INCXY
+			STX SPA12 +1
+			STY SPA12 +2
+			INCXY 
+			STX SPA13 +1
+			STY SPA13 +2
+			INCXY 
+			STX SPA14 +1
+			STY SPA14 +2
+			INCXY 
+			STX SPA15 +1
+			STY SPA15 +2
+			INCXY 
+			STX SPA16 +1
+			STY SPA16 +2
+			INCXY 
+			STX SPA17 +1
+			STY SPA17 +2
+			INCXY 
+			STX SPA18 +1
+			STY SPA18 +2
+			INCXY 
+			STX SPA19 +1
+			STY SPA19 +2
+			INCXY 
+			STX SPA20 +1
+			STY SPA20 +2
+			INCXY 
+			STX SPA21 +1
+			STY SPA21 +2
+			INCXY 
+			STX SPA22 +1
+			STY SPA22 +2
+			INCXY 
+			STX SPA23 +1
+			STY SPA23 +2
+			INCXY 
+			STX SPA24 +1
+			STY SPA24 +2
+			INCXY 
+			STX SPA25 +1
+			STY SPA25 +2
+			INCXY 
+			STX SPA26 +1
+			STY SPA26 +2
+			INCXY 
+			STX SPA27 +1
+			STY SPA27 +2
+			INCXY 
+			STX SPA28 +1
+			STY SPA28 +2
+			INCXY 
+			STX SPA29 +1
+			STY SPA29 +2
+			INCXY 
+			STX SPA30 +1
+			STY SPA30 +2
+			INCXY 
+			STX SPA31 +1
+			STY SPA31 +2
+			INCXY 
+			STX SPA32 +1
+			STY SPA32 +2
+
+			LDX SPR_ORA
+			LDY SPR_ORA +1
+			STX SPO01 +1
+			STY SPO01 +2
+			INCXY 
+			STX SPO02 +1
+			STY SPO02 +2
+			INCXY 
+			STX SPO03 +1
+			STY SPO03 +2
+			INCXY 
+			STX SPO04 +1
+			STY SPO04 +2
+			INCXY 
+			STX SPO05 +1
+			STY SPO05 +2
+			INCXY 
+			STX SPO06 +1
+			STY SPO06 +2
+			INCXY 
+			STX SPO07 +1
+			STY SPO07 +2
+			INCXY 
+			STX SPO08 +1
+			STY SPO08 +2
+			INCXY 
+			STX SPO09 +1
+			STY SPO09 +2
+			INCXY 
+			STX SPO10 +1
+			STY SPO10 +2
+			INCXY 
+			STX SPO11 +1
+			STY SPO11 +2
+			INCXY 
+			STX SPO12 +1
+			STY SPO12 +2
+			INCXY 
+			STX SPO13 +1
+			STY SPO13 +2
+			INCXY 
+			STX SPO14 +1
+			STY SPO14 +2
+			INCXY 
+			STX SPO15 +1
+			STY SPO15 +2
+			INCXY 
+			STX SPO16 +1
+			STY SPO16 +2
+			INCXY 
+			STX SPO17 +1
+			STY SPO17 +2
+			INCXY 
+			STX SPO18 +1
+			STY SPO18 +2
+			INCXY 
+			STX SPO19 +1
+			STY SPO19 +2
+			INCXY 
+			STX SPO20 +1
+			STY SPO20 +2
+			INCXY 
+			STX SPO21 +1
+			STY SPO21 +2
+			INCXY 
+			STX SPO22 +1
+			STY SPO22 +2
+			INCXY 
+			STX SPO23 +1
+			STY SPO23 +2
+			INCXY 
+			STX SPO24 +1
+			STY SPO24 +2
+			INCXY 
+			STX SPO25 +1
+			STY SPO25 +2
+			INCXY 
+			STX SPO26 +1
+			STY SPO26 +2
+			INCXY 
+			STX SPO27 +1
+			STY SPO27 +2
+			INCXY 
+			STX SPO28 +1
+			STY SPO28 +2
+			INCXY 
+			STX SPO29 +1
+			STY SPO29 +2
+			INCXY 
+			STX SPO30 +1
+			STY SPO30 +2
+			INCXY 
+			STX SPO31 +1
+			STY SPO31 +2
+			INCXY 
+			STX SPO32 +1
+			STY SPO32 +2
+
+			TAY
+
+			LDX TB_HI +31,Y			
+			STX SRC32 +2
+			STX DST32 +2
+			DEX
+			STX SRC24 +2
+			STX DST24 +2
+			DEX
+			STX SRC16 +2
+			STX DST16 +2
+			DEX
+			STX SRC08 +2
+			STX DST08 +2
+
+			LDA SC_LO +31,Y
+			STA SRC32 +1
+			STA DST32 +1
+			STA SRC24 +1
+			STA DST24 +1
+			STA SRC16 +1
+			STA DST16 +1
+			STA SRC08 +1
+			STA DST08 +1
+
+			LDX TB_HI +30,Y
+			STX SRC31 +2
+			STX DST31 +2
+			DEX
+			STX SRC23 +2
+			STX DST23 +2
+			DEX
+			STX SRC15 +2
+			STX DST15 +2
+			DEX
+			STX SRC07 +2
+			STX DST07 +2
+
+			LDA SC_LO +30,Y
+			STA SRC31 +1
+			STA DST31 +1
+			STA SRC23 +1
+			STA DST23 +1
+			STA SRC15 +1
+			STA DST15 +1
+			STA SRC07 +1
+			STA DST07 +1
+			
+			LDX TB_HI +29,Y
+			STX SRC30 +2
+			STX DST30 +2
+			DEX
+			STX SRC22 +2
+			STX DST22 +2
+			DEX
+			STX SRC14 +2
+			STX DST14 +2
+			DEX
+			STX SRC06 +2
+			STX DST06 +2
+
+			LDA SC_LO +29,Y
+			STA SRC30 +1
+			STA DST30 +1
+			STA SRC22 +1
+			STA DST22 +1
+			STA SRC14 +1
+			STA DST14 +1
+			STA SRC06 +1
+			STA DST06 +1
+			
+			LDX TB_HI +28,Y
+			STX SRC29 +2
+			STX DST29 +2
+			DEX
+			STX SRC21 +2
+			STX DST21 +2
+			DEX
+			STX SRC13 +2
+			STX DST13 +2
+			DEX
+			STX SRC05 +2
+			STX DST05 +2
+
+			LDA SC_LO +28,Y
+			STA SRC29 +1
+			STA DST29 +1
+			STA SRC21 +1
+			STA DST21 +1
+			STA SRC13 +1
+			STA DST13 +1
+			STA SRC05 +1
+			STA DST05 +1
+
+			LDX TB_HI +27,Y
+			STX SRC28 +2
+			STX DST28 +2
+			DEX
+			STX SRC20 +2
+			STX DST20 +2
+			DEX
+			STX SRC12 +2
+			STX DST12 +2
+			DEX
+			STX SRC04 +2
+			STX DST04 +2
+
+			LDA SC_LO +27,Y
+			STA SRC28 +1
+			STA DST28 +1
+			STA SRC20 +1
+			STA DST20 +1
+			STA SRC12 +1
+			STA DST12 +1
+			STA SRC04 +1
+			STA DST04 +1
+
+			LDX TB_HI +26,Y
+			STX SRC27 +2
+			STX DST27 +2
+			DEX
+			STX SRC19 +2
+			STX DST19 +2
+			DEX
+			STX SRC11 +2
+			STX DST11 +2
+			DEX
+			STX SRC03 +2
+			STX DST03 +2
+
+			LDA SC_LO +26,Y
+			STA SRC27 +1
+			STA DST27 +1
+			STA SRC19 +1
+			STA DST19 +1
+			STA SRC11 +1
+			STA DST11 +1
+			STA SRC03 +1
+			STA DST03 +1
+
+			LDX TB_HI +25,Y
+			STX SRC26 +2
+			STX DST26 +2
+			DEX
+			STX SRC18 +2
+			STX DST18 +2
+			DEX
+			STX SRC10 +2
+			STX DST10 +2
+			DEX
+			STX SRC02 +2
+			STX DST02 +2
+
+			LDA SC_LO +25,Y
+			STA SRC26 +1
+			STA DST26 +1
+			STA SRC18 +1
+			STA DST18 +1
+			STA SRC10 +1
+			STA DST10 +1
+			STA SRC02 +1
+			STA DST02 +1
+
+			LDX TB_HI +24,Y
+			STX SRC25 +2
+			STX DST25 +2
+			DEX
+			STX SRC17 +2
+			STX DST17 +2
+			DEX
+			STX SRC09 +2
+			STX DST09 +2
+			DEX
+			STX SRC01 +2
+			STX DST01 +2
+
+			LDA SC_LO +24,Y
+			STA SRC25 +1
+			STA DST25 +1
+			STA SRC17 +1
+			STA DST17 +1
+			STA SRC09 +1
+			STA DST09 +1
+			STA SRC01 +1
+			STA DST01 +1
+
+			LDX REGX
+			LDY SCR_HOR,X
+			LDX SPR_CNT ; 24 16 8 0 (needs to be colums*rows)
+			SEC
+
+LOOP
+SRC01 			LDA $ABCD,Y
+SPA01 			AND $ABCD,X
+SPO01 			ORA $ABCD,X
+DST01 			STA $ABCD,Y
+
+SRC02 			LDA $ABCD,Y
+SPA02 			AND $ABCD,X
+SPO02 			ORA $ABCD,X
+DST02 			STA $ABCD,Y
+     
+SRC03 			LDA $ABCD,Y
+SPA03 			AND $ABCD,X
+SPO03 			ORA $ABCD,X
+DST03 			STA $ABCD,Y
+
+SRC04 			LDA $ABCD,Y
+SPA04 			AND $ABCD,X
+SPO04 			ORA $ABCD,X
+DST04 			STA $ABCD,Y
+
+SRC05 			LDA $ABCD,Y
+SPA05 			AND $ABCD,X
+SPO05 			ORA $ABCD,X
+DST05 			STA $ABCD,Y
+
+SRC06 			LDA $ABCD,Y
+SPA06 			AND $ABCD,X
+SPO06 			ORA $ABCD,X
+DST06 			STA $ABCD,Y
+
+SRC07 			LDA $ABCD,Y
+SPA07 			AND $ABCD,X
+SPO07 			ORA $ABCD,X
+DST07 			STA $ABCD,Y
+
+SRC08 			LDA $ABCD,Y
+SPA08 			AND $ABCD,X
+SPO08 			ORA $ABCD,X
+DST08 			STA $ABCD,Y
+
+SRC09 			LDA $ABCD,Y
+SPA09 			AND $ABCD,X
+SPO09 			ORA $ABCD,X
+DST09 			STA $ABCD,Y
+
+SRC10 			LDA $ABCD,Y
+SPA10 			AND $ABCD,X
+SPO10 			ORA $ABCD,X
+DST10 			STA $ABCD,Y
+
+SRC11 			LDA $ABCD,Y
+SPA11 			AND $ABCD,X
+SPO11 			ORA $ABCD,X
+DST11 			STA $ABCD,Y
+
+SRC12 			LDA $ABCD,Y
+SPA12 			AND $ABCD,X
+SPO12 			ORA $ABCD,X
+DST12 			STA $ABCD,Y
+
+SRC13 			LDA $ABCD,Y
+SPA13 			AND $ABCD,X
+SPO13 			ORA $ABCD,X
+DST13 			STA $ABCD,Y
+
+SRC14 			LDA $ABCD,Y
+SPA14 			AND $ABCD,X
+SPO14 			ORA $ABCD,X
+DST14 			STA $ABCD,Y
+
+SRC15 			LDA $ABCD,Y
+SPA15 			AND $ABCD,X
+SPO15 			ORA $ABCD,X
+DST15 			STA $ABCD,Y
+
+SRC16 			LDA $ABCD,Y
+SPA16 			AND $ABCD,X
+SPO16 			ORA $ABCD,X
+DST16 			STA $ABCD,Y
+
+SRC17 			LDA $ABCD,Y
+SPA17 			AND $ABCD,X
+SPO17 			ORA $ABCD,X
+DST17 			STA $ABCD,Y
+
+SRC18 			LDA $ABCD,Y
+SPA18 			AND $ABCD,X
+SPO18 			ORA $ABCD,X
+DST18 			STA $ABCD,Y
+
+SRC19 			LDA $ABCD,Y
+SPA19 			AND $ABCD,X
+SPO19 			ORA $ABCD,X
+DST19 			STA $ABCD,Y
+
+SRC20 			LDA $ABCD,Y
+SPA20 			AND $ABCD,X
+SPO20 			ORA $ABCD,X
+DST20			STA $ABCD,Y
+
+SRC21 			LDA $ABCD,Y
+SPA21 			AND $ABCD,X
+SPO21 			ORA $ABCD,X
+DST21 			STA $ABCD,Y
+
+SRC22 			LDA $ABCD,Y
+SPA22 			AND $ABCD,X
+SPO22 			ORA $ABCD,X
+DST22 			STA $ABCD,Y
+
+SRC23 			LDA $ABCD,Y
+SPA23 			AND $ABCD,X
+SPO23 			ORA $ABCD,X
+DST23 			STA $ABCD,Y
+
+SRC24 			LDA $ABCD,Y
+SPA24 			AND $ABCD,X
+SPO24 			ORA $ABCD,X
+DST24 			STA $ABCD,Y
+
+SRC25 			LDA $ABCD,Y
+SPA25 			AND $ABCD,X
+SPO25 			ORA $ABCD,X
+DST25 			STA $ABCD,Y
+
+SRC26 			LDA $ABCD,Y
+SPA26 			AND $ABCD,X
+SPO26 			ORA $ABCD,X
+DST26 			STA $ABCD,Y
+
+SRC27 			LDA $ABCD,Y
+SPA27 			AND $ABCD,X
+SPO27 			ORA $ABCD,X
+DST27 			STA $ABCD,Y
+
+SRC28 			LDA $ABCD,Y
+SPA28 			AND $ABCD,X
+SPO28 			ORA $ABCD,X
+DST28 			STA $ABCD,Y
+
+SRC29 			LDA $ABCD,Y
+SPA29 			AND $ABCD,X
+SPO29 			ORA $ABCD,X
+DST29 			STA $ABCD,Y
+
+SRC30 			LDA $ABCD,Y
+SPA30 			AND $ABCD,X
+SPO30 			ORA $ABCD,X
+DST30 			STA $ABCD,Y
+
+SRC31 			LDA $ABCD,Y
+SPA31 			AND $ABCD,X
+SPO31 			ORA $ABCD,X
+DST31 			STA $ABCD,Y
+
+SRC32 			LDA $ABCD,Y
+SPA32 			AND $ABCD,X
+SPO32 			ORA $ABCD,X
+DST32 			STA $ABCD,Y
+
+				TXA
+				SBC #32 ; -1 ; carry clear
+				BEQ EXIT
+			TAX
+			INY
+			JMP LOOP
+EXIT  	RTS
+.ENDL
+
+			.ALIGN $100
+				
+DISPLAY_LIST		.BYTE $70,$70,$70	; Discard 24 scan lines
+			.BYTE $4E,<SCN,>SCN		; mode E
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 000
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 016
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 032
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 048
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 064
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 080
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 096
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ;, $0E ; 112
+			.BYTE $4E,<(SCN+4096),>(SCN+4096)		; mode E ; need to say set memory to scr +4096 ?
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 128
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 144
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ; 160
+			.BYTE $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E ;, $0E ; 176
+;			.BYTE $0E
+			.BYTE $41,<DISPLAY_LIST,>DISPLAY_LIST
+;			.BYTE $80 ; DLI
+
+	.ALIGN $100
+
+SC_HI	.BYTE >(SCN+(32*000)),>(SCN+(32*001)),>(SCN+(32*002)),>(SCN+(32*003)),>(SCN+(32*004)),>(SCN+(32*005)),>(SCN+(32*006)),>(SCN+(32*007))
+	.BYTE >(SCN+(32*008)),>(SCN+(32*009)),>(SCN+(32*010)),>(SCN+(32*011)),>(SCN+(32*012)),>(SCN+(32*013)),>(SCN+(32*014)),>(SCN+(32*015))
+	.BYTE >(SCN+(32*016)),>(SCN+(32*017)),>(SCN+(32*018)),>(SCN+(32*019)),>(SCN+(32*020)),>(SCN+(32*021)),>(SCN+(32*022)),>(SCN+(32*023))
+	.BYTE >(SCN+(32*024)),>(SCN+(32*025)),>(SCN+(32*026)),>(SCN+(32*027)),>(SCN+(32*028)),>(SCN+(32*029)),>(SCN+(32*030)),>(SCN+(32*031))
+	.BYTE >(SCN+(32*032)),>(SCN+(32*033)),>(SCN+(32*034)),>(SCN+(32*035)),>(SCN+(32*036)),>(SCN+(32*037)),>(SCN+(32*038)),>(SCN+(32*039))
+	.BYTE >(SCN+(32*040)),>(SCN+(32*041)),>(SCN+(32*042)),>(SCN+(32*043)),>(SCN+(32*044)),>(SCN+(32*045)),>(SCN+(32*046)),>(SCN+(32*047))
+	.BYTE >(SCN+(32*048)),>(SCN+(32*049)),>(SCN+(32*050)),>(SCN+(32*051)),>(SCN+(32*052)),>(SCN+(32*053)),>(SCN+(32*054)),>(SCN+(32*055))
+	.BYTE >(SCN+(32*056)),>(SCN+(32*057)),>(SCN+(32*058)),>(SCN+(32*059)),>(SCN+(32*060)),>(SCN+(32*061)),>(SCN+(32*062)),>(SCN+(32*063))
+	.BYTE >(SCN+(32*064)),>(SCN+(32*065)),>(SCN+(32*066)),>(SCN+(32*067)),>(SCN+(32*068)),>(SCN+(32*069)),>(SCN+(32*070)),>(SCN+(32*071))
+	.BYTE >(SCN+(32*072)),>(SCN+(32*073)),>(SCN+(32*074)),>(SCN+(32*075)),>(SCN+(32*076)),>(SCN+(32*077)),>(SCN+(32*078)),>(SCN+(32*079))
+	.BYTE >(SCN+(32*080)),>(SCN+(32*081)),>(SCN+(32*082)),>(SCN+(32*083)),>(SCN+(32*084)),>(SCN+(32*085)),>(SCN+(32*086)),>(SCN+(32*087))
+	.BYTE >(SCN+(32*088)),>(SCN+(32*089)),>(SCN+(32*090)),>(SCN+(32*091)),>(SCN+(32*092)),>(SCN+(32*093)),>(SCN+(32*094)),>(SCN+(32*095))
+	.BYTE >(SCN+(32*096)),>(SCN+(32*097)),>(SCN+(32*098)),>(SCN+(32*099)),>(SCN+(32*100)),>(SCN+(32*101)),>(SCN+(32*102)),>(SCN+(32*103))
+	.BYTE >(SCN+(32*104)),>(SCN+(32*105)),>(SCN+(32*106)),>(SCN+(32*107)),>(SCN+(32*108)),>(SCN+(32*109)),>(SCN+(32*110)),>(SCN+(32*111))
+	.BYTE >(SCN+(32*112)),>(SCN+(32*113)),>(SCN+(32*114)),>(SCN+(32*115)),>(SCN+(32*116)),>(SCN+(32*117)),>(SCN+(32*118)),>(SCN+(32*119))
+	.BYTE >(SCN+(32*120)),>(SCN+(32*121)),>(SCN+(32*122)),>(SCN+(32*123)),>(SCN+(32*124)),>(SCN+(32*125)),>(SCN+(32*126)),>(SCN+(32*127))
+	.BYTE >(SCN+(32*128)),>(SCN+(32*129)),>(SCN+(32*130)),>(SCN+(32*131)),>(SCN+(32*132)),>(SCN+(32*133)),>(SCN+(32*134)),>(SCN+(32*135))
+	.BYTE >(SCN+(32*136)),>(SCN+(32*137)),>(SCN+(32*138)),>(SCN+(32*139)),>(SCN+(32*140)),>(SCN+(32*141)),>(SCN+(32*142)),>(SCN+(32*143))
+	.BYTE >(SCN+(32*144)),>(SCN+(32*145)),>(SCN+(32*146)),>(SCN+(32*147)),>(SCN+(32*148)),>(SCN+(32*149)),>(SCN+(32*150)),>(SCN+(32*151))
+	.BYTE >(SCN+(32*152)),>(SCN+(32*153)),>(SCN+(32*154)),>(SCN+(32*155)),>(SCN+(32*156)),>(SCN+(32*157)),>(SCN+(32*158)),>(SCN+(32*159))
+	.BYTE >(SCN+(32*160)),>(SCN+(32*161)),>(SCN+(32*162)),>(SCN+(32*163)),>(SCN+(32*164)),>(SCN+(32*165)),>(SCN+(32*166)),>(SCN+(32*167))
+	.BYTE >(SCN+(32*168)),>(SCN+(32*169)),>(SCN+(32*170)),>(SCN+(32*171)),>(SCN+(32*172)),>(SCN+(32*173)),>(SCN+(32*174)),>(SCN+(32*175))
+	.BYTE >(SCN+(32*176)),>(SCN+(32*177)),>(SCN+(32*178)),>(SCN+(32*179)),>(SCN+(32*180)),>(SCN+(32*181)),>(SCN+(32*182)),>(SCN+(32*183))
+	.BYTE >(SCN+(32*184)),>(SCN+(32*185)),>(SCN+(32*186)),>(SCN+(32*187)),>(SCN+(32*188)),>(SCN+(32*189)),>(SCN+(32*190)),>(SCN+(32*191))
+	
+	.ALIGN $100
+SC_LO	.BYTE <(SCN+(32*000)),<(SCN+(32*001)),<(SCN+(32*002)),<(SCN+(32*003)),<(SCN+(32*004)),<(SCN+(32*005)),<(SCN+(32*006)),<(SCN+(32*007))
+	.BYTE <(SCN+(32*008)),<(SCN+(32*009)),<(SCN+(32*010)),<(SCN+(32*011)),<(SCN+(32*012)),<(SCN+(32*013)),<(SCN+(32*014)),<(SCN+(32*015))
+	.BYTE <(SCN+(32*016)),<(SCN+(32*017)),<(SCN+(32*018)),<(SCN+(32*019)),<(SCN+(32*020)),<(SCN+(32*021)),<(SCN+(32*022)),<(SCN+(32*023))
+	.BYTE <(SCN+(32*024)),<(SCN+(32*025)),<(SCN+(32*026)),<(SCN+(32*027)),<(SCN+(32*028)),<(SCN+(32*029)),<(SCN+(32*030)),<(SCN+(32*031))
+	.BYTE <(SCN+(32*032)),<(SCN+(32*033)),<(SCN+(32*034)),<(SCN+(32*035)),<(SCN+(32*036)),<(SCN+(32*037)),<(SCN+(32*038)),<(SCN+(32*039))
+	.BYTE <(SCN+(32*040)),<(SCN+(32*041)),<(SCN+(32*042)),<(SCN+(32*043)),<(SCN+(32*044)),<(SCN+(32*045)),<(SCN+(32*046)),<(SCN+(32*047))
+	.BYTE <(SCN+(32*048)),<(SCN+(32*049)),<(SCN+(32*050)),<(SCN+(32*051)),<(SCN+(32*052)),<(SCN+(32*053)),<(SCN+(32*054)),<(SCN+(32*055))
+	.BYTE <(SCN+(32*056)),<(SCN+(32*057)),<(SCN+(32*058)),<(SCN+(32*059)),<(SCN+(32*060)),<(SCN+(32*061)),<(SCN+(32*062)),<(SCN+(32*063))
+	.BYTE <(SCN+(32*064)),<(SCN+(32*065)),<(SCN+(32*066)),<(SCN+(32*067)),<(SCN+(32*068)),<(SCN+(32*069)),<(SCN+(32*070)),<(SCN+(32*071))
+	.BYTE <(SCN+(32*072)),<(SCN+(32*073)),<(SCN+(32*074)),<(SCN+(32*075)),<(SCN+(32*076)),<(SCN+(32*077)),<(SCN+(32*078)),<(SCN+(32*079))
+	.BYTE <(SCN+(32*080)),<(SCN+(32*081)),<(SCN+(32*082)),<(SCN+(32*083)),<(SCN+(32*084)),<(SCN+(32*085)),<(SCN+(32*086)),<(SCN+(32*087))
+	.BYTE <(SCN+(32*088)),<(SCN+(32*089)),<(SCN+(32*090)),<(SCN+(32*091)),<(SCN+(32*092)),<(SCN+(32*093)),<(SCN+(32*094)),<(SCN+(32*095))
+	.BYTE <(SCN+(32*096)),<(SCN+(32*097)),<(SCN+(32*098)),<(SCN+(32*099)),<(SCN+(32*100)),<(SCN+(32*101)),<(SCN+(32*102)),<(SCN+(32*103))
+	.BYTE <(SCN+(32*104)),<(SCN+(32*105)),<(SCN+(32*106)),<(SCN+(32*107)),<(SCN+(32*108)),<(SCN+(32*109)),<(SCN+(32*110)),<(SCN+(32*111))
+	.BYTE <(SCN+(32*112)),<(SCN+(32*113)),<(SCN+(32*114)),<(SCN+(32*115)),<(SCN+(32*116)),<(SCN+(32*117)),<(SCN+(32*118)),<(SCN+(32*119))
+	.BYTE <(SCN+(32*120)),<(SCN+(32*121)),<(SCN+(32*122)),<(SCN+(32*123)),<(SCN+(32*124)),<(SCN+(32*125)),<(SCN+(32*126)),<(SCN+(32*127))
+	.BYTE <(SCN+(32*128)),<(SCN+(32*129)),<(SCN+(32*130)),<(SCN+(32*131)),<(SCN+(32*132)),<(SCN+(32*133)),<(SCN+(32*134)),<(SCN+(32*135))
+	.BYTE <(SCN+(32*136)),<(SCN+(32*137)),<(SCN+(32*138)),<(SCN+(32*139)),<(SCN+(32*140)),<(SCN+(32*141)),<(SCN+(32*142)),<(SCN+(32*143))
+	.BYTE <(SCN+(32*144)),<(SCN+(32*145)),<(SCN+(32*146)),<(SCN+(32*147)),<(SCN+(32*148)),<(SCN+(32*149)),<(SCN+(32*150)),<(SCN+(32*151))
+	.BYTE <(SCN+(32*152)),<(SCN+(32*153)),<(SCN+(32*154)),<(SCN+(32*155)),<(SCN+(32*156)),<(SCN+(32*157)),<(SCN+(32*158)),<(SCN+(32*159))
+	.BYTE <(SCN+(32*160)),<(SCN+(32*161)),<(SCN+(32*162)),<(SCN+(32*163)),<(SCN+(32*164)),<(SCN+(32*165)),<(SCN+(32*166)),<(SCN+(32*167))
+	.BYTE <(SCN+(32*168)),<(SCN+(32*169)),<(SCN+(32*170)),<(SCN+(32*171)),<(SCN+(32*172)),<(SCN+(32*173)),<(SCN+(32*174)),<(SCN+(32*175))
+	.BYTE <(SCN+(32*176)),<(SCN+(32*177)),<(SCN+(32*178)),<(SCN+(32*179)),<(SCN+(32*180)),<(SCN+(32*181)),<(SCN+(32*182)),<(SCN+(32*183))
+	.BYTE <(SCN+(32*184)),<(SCN+(32*185)),<(SCN+(32*186)),<(SCN+(32*187)),<(SCN+(32*188)),<(SCN+(32*189)),<(SCN+(32*190)),<(SCN+(32*191))
+
+	.ALIGN $100
+SB_HI	.BYTE >(SCB+(32*000)),>(SCB+(32*001)),>(SCB+(32*002)),>(SCB+(32*003)),>(SCB+(32*004)),>(SCB+(32*005)),>(SCB+(32*006)),>(SCB+(32*007))
+	.BYTE >(SCB+(32*008)),>(SCB+(32*009)),>(SCB+(32*010)),>(SCB+(32*011)),>(SCB+(32*012)),>(SCB+(32*013)),>(SCB+(32*014)),>(SCB+(32*015))
+	.BYTE >(SCB+(32*016)),>(SCB+(32*017)),>(SCB+(32*018)),>(SCB+(32*019)),>(SCB+(32*020)),>(SCB+(32*021)),>(SCB+(32*022)),>(SCB+(32*023))
+	.BYTE >(SCB+(32*024)),>(SCB+(32*025)),>(SCB+(32*026)),>(SCB+(32*027)),>(SCB+(32*028)),>(SCB+(32*029)),>(SCB+(32*030)),>(SCB+(32*031))
+	.BYTE >(SCB+(32*032)),>(SCB+(32*033)),>(SCB+(32*034)),>(SCB+(32*035)),>(SCB+(32*036)),>(SCB+(32*037)),>(SCB+(32*038)),>(SCB+(32*039))
+	.BYTE >(SCB+(32*040)),>(SCB+(32*041)),>(SCB+(32*042)),>(SCB+(32*043)),>(SCB+(32*044)),>(SCB+(32*045)),>(SCB+(32*046)),>(SCB+(32*047))
+	.BYTE >(SCB+(32*048)),>(SCB+(32*049)),>(SCB+(32*050)),>(SCB+(32*051)),>(SCB+(32*052)),>(SCB+(32*053)),>(SCB+(32*054)),>(SCB+(32*055))
+	.BYTE >(SCB+(32*056)),>(SCB+(32*057)),>(SCB+(32*058)),>(SCB+(32*059)),>(SCB+(32*060)),>(SCB+(32*061)),>(SCB+(32*062)),>(SCB+(32*063))
+	.BYTE >(SCB+(32*064)),>(SCB+(32*065)),>(SCB+(32*066)),>(SCB+(32*067)),>(SCB+(32*068)),>(SCB+(32*069)),>(SCB+(32*070)),>(SCB+(32*071))
+	.BYTE >(SCB+(32*072)),>(SCB+(32*073)),>(SCB+(32*074)),>(SCB+(32*075)),>(SCB+(32*076)),>(SCB+(32*077)),>(SCB+(32*078)),>(SCB+(32*079))
+	.BYTE >(SCB+(32*080)),>(SCB+(32*081)),>(SCB+(32*082)),>(SCB+(32*083)),>(SCB+(32*084)),>(SCB+(32*085)),>(SCB+(32*086)),>(SCB+(32*087))
+	.BYTE >(SCB+(32*088)),>(SCB+(32*089)),>(SCB+(32*090)),>(SCB+(32*091)),>(SCB+(32*092)),>(SCB+(32*093)),>(SCB+(32*094)),>(SCB+(32*095))
+	.BYTE >(SCB+(32*096)),>(SCB+(32*097)),>(SCB+(32*098)),>(SCB+(32*099)),>(SCB+(32*100)),>(SCB+(32*101)),>(SCB+(32*102)),>(SCB+(32*103))
+	.BYTE >(SCB+(32*104)),>(SCB+(32*105)),>(SCB+(32*106)),>(SCB+(32*107)),>(SCB+(32*108)),>(SCB+(32*109)),>(SCB+(32*110)),>(SCB+(32*111))
+	.BYTE >(SCB+(32*112)),>(SCB+(32*113)),>(SCB+(32*114)),>(SCB+(32*115)),>(SCB+(32*116)),>(SCB+(32*117)),>(SCB+(32*118)),>(SCB+(32*119))
+	.BYTE >(SCB+(32*120)),>(SCB+(32*121)),>(SCB+(32*122)),>(SCB+(32*123)),>(SCB+(32*124)),>(SCB+(32*125)),>(SCB+(32*126)),>(SCB+(32*127))
+	.BYTE >(SCB+(32*128)),>(SCB+(32*129)),>(SCB+(32*130)),>(SCB+(32*131)),>(SCB+(32*132)),>(SCB+(32*133)),>(SCB+(32*134)),>(SCB+(32*135))
+	.BYTE >(SCB+(32*136)),>(SCB+(32*137)),>(SCB+(32*138)),>(SCB+(32*139)),>(SCB+(32*140)),>(SCB+(32*141)),>(SCB+(32*142)),>(SCB+(32*143))
+	.BYTE >(SCB+(32*144)),>(SCB+(32*145)),>(SCB+(32*146)),>(SCB+(32*147)),>(SCB+(32*148)),>(SCB+(32*149)),>(SCB+(32*150)),>(SCB+(32*151))
+	.BYTE >(SCB+(32*152)),>(SCB+(32*153)),>(SCB+(32*154)),>(SCB+(32*155)),>(SCB+(32*156)),>(SCB+(32*157)),>(SCB+(32*158)),>(SCB+(32*159))
+	.BYTE >(SCB+(32*160)),>(SCB+(32*161)),>(SCB+(32*162)),>(SCB+(32*163)),>(SCB+(32*164)),>(SCB+(32*165)),>(SCB+(32*166)),>(SCB+(32*167))
+	.BYTE >(SCB+(32*168)),>(SCB+(32*169)),>(SCB+(32*170)),>(SCB+(32*171)),>(SCB+(32*172)),>(SCB+(32*173)),>(SCB+(32*174)),>(SCB+(32*175))
+	.BYTE >(SCB+(32*176)),>(SCB+(32*177)),>(SCB+(32*178)),>(SCB+(32*179)),>(SCB+(32*180)),>(SCB+(32*181)),>(SCB+(32*182)),>(SCB+(32*183))
+	.BYTE >(SCB+(32*184)),>(SCB+(32*185)),>(SCB+(32*186)),>(SCB+(32*187)),>(SCB+(32*188)),>(SCB+(32*189)),>(SCB+(32*190)),>(SCB+(32*191))
+	
+	.ALIGN $100
+TB_HI	.BYTE >(TSB+(32*000)),>(TSB+(32*001)),>(TSB+(32*002)),>(TSB+(32*003)),>(TSB+(32*004)),>(TSB+(32*005)),>(TSB+(32*006)),>(TSB+(32*007))
+	.BYTE >(TSB+(32*008)),>(TSB+(32*009)),>(TSB+(32*010)),>(TSB+(32*011)),>(TSB+(32*012)),>(TSB+(32*013)),>(TSB+(32*014)),>(TSB+(32*015))
+	.BYTE >(TSB+(32*016)),>(TSB+(32*017)),>(TSB+(32*018)),>(TSB+(32*019)),>(TSB+(32*020)),>(TSB+(32*021)),>(TSB+(32*022)),>(TSB+(32*023))
+	.BYTE >(TSB+(32*024)),>(TSB+(32*025)),>(TSB+(32*026)),>(TSB+(32*027)),>(TSB+(32*028)),>(TSB+(32*029)),>(TSB+(32*030)),>(TSB+(32*031))
+	.BYTE >(TSB+(32*032)),>(TSB+(32*033)),>(TSB+(32*034)),>(TSB+(32*035)),>(TSB+(32*036)),>(TSB+(32*037)),>(TSB+(32*038)),>(TSB+(32*039))
+	.BYTE >(TSB+(32*040)),>(TSB+(32*041)),>(TSB+(32*042)),>(TSB+(32*043)),>(TSB+(32*044)),>(TSB+(32*045)),>(TSB+(32*046)),>(TSB+(32*047))
+	.BYTE >(TSB+(32*048)),>(TSB+(32*049)),>(TSB+(32*050)),>(TSB+(32*051)),>(TSB+(32*052)),>(TSB+(32*053)),>(TSB+(32*054)),>(TSB+(32*055))
+	.BYTE >(TSB+(32*056)),>(TSB+(32*057)),>(TSB+(32*058)),>(TSB+(32*059)),>(TSB+(32*060)),>(TSB+(32*061)),>(TSB+(32*062)),>(TSB+(32*063))
+	.BYTE >(TSB+(32*064)),>(TSB+(32*065)),>(TSB+(32*066)),>(TSB+(32*067)),>(TSB+(32*068)),>(TSB+(32*069)),>(TSB+(32*070)),>(TSB+(32*071))
+	.BYTE >(TSB+(32*072)),>(TSB+(32*073)),>(TSB+(32*074)),>(TSB+(32*075)),>(TSB+(32*076)),>(TSB+(32*077)),>(TSB+(32*078)),>(TSB+(32*079))
+	.BYTE >(TSB+(32*080)),>(TSB+(32*081)),>(TSB+(32*082)),>(TSB+(32*083)),>(TSB+(32*084)),>(TSB+(32*085)),>(TSB+(32*086)),>(TSB+(32*087))
+	.BYTE >(TSB+(32*088)),>(TSB+(32*089)),>(TSB+(32*090)),>(TSB+(32*091)),>(TSB+(32*092)),>(TSB+(32*093)),>(TSB+(32*094)),>(TSB+(32*095))
+	.BYTE >(TSB+(32*096)),>(TSB+(32*097)),>(TSB+(32*098)),>(TSB+(32*099)),>(TSB+(32*100)),>(TSB+(32*101)),>(TSB+(32*102)),>(TSB+(32*103))
+	.BYTE >(TSB+(32*104)),>(TSB+(32*105)),>(TSB+(32*106)),>(TSB+(32*107)),>(TSB+(32*108)),>(TSB+(32*109)),>(TSB+(32*110)),>(TSB+(32*111))
+	.BYTE >(TSB+(32*112)),>(TSB+(32*113)),>(TSB+(32*114)),>(TSB+(32*115)),>(TSB+(32*116)),>(TSB+(32*117)),>(TSB+(32*118)),>(TSB+(32*119))
+	.BYTE >(TSB+(32*120)),>(TSB+(32*121)),>(TSB+(32*122)),>(TSB+(32*123)),>(TSB+(32*124)),>(TSB+(32*125)),>(TSB+(32*126)),>(TSB+(32*127))
+	.BYTE >(TSB+(32*128)),>(TSB+(32*129)),>(TSB+(32*130)),>(TSB+(32*131)),>(TSB+(32*132)),>(TSB+(32*133)),>(TSB+(32*134)),>(TSB+(32*135))
+	.BYTE >(TSB+(32*136)),>(TSB+(32*137)),>(TSB+(32*138)),>(TSB+(32*139)),>(TSB+(32*140)),>(TSB+(32*141)),>(TSB+(32*142)),>(TSB+(32*143))
+	.BYTE >(TSB+(32*144)),>(TSB+(32*145)),>(TSB+(32*146)),>(TSB+(32*147)),>(TSB+(32*148)),>(TSB+(32*149)),>(TSB+(32*150)),>(TSB+(32*151))
+	.BYTE >(TSB+(32*152)),>(TSB+(32*153)),>(TSB+(32*154)),>(TSB+(32*155)),>(TSB+(32*156)),>(TSB+(32*157)),>(TSB+(32*158)),>(TSB+(32*159))
+	.BYTE >(TSB+(32*160)),>(TSB+(32*161)),>(TSB+(32*162)),>(TSB+(32*163)),>(TSB+(32*164)),>(TSB+(32*165)),>(TSB+(32*166)),>(TSB+(32*167))
+	.BYTE >(TSB+(32*168)),>(TSB+(32*169)),>(TSB+(32*170)),>(TSB+(32*171)),>(TSB+(32*172)),>(TSB+(32*173)),>(TSB+(32*174)),>(TSB+(32*175))
+	.BYTE >(TSB+(32*176)),>(TSB+(32*177)),>(TSB+(32*178)),>(TSB+(32*179)),>(TSB+(32*180)),>(TSB+(32*181)),>(TSB+(32*182)),>(TSB+(32*183))
+	.BYTE >(TSB+(32*184)),>(TSB+(32*185)),>(TSB+(32*186)),>(TSB+(32*187)),>(TSB+(32*188)),>(TSB+(32*189)),>(TSB+(32*190)),>(TSB+(32*191))
+	
+	.ALIGN $100
+SCR_HOR
+ .BYTE 00,00,00,00,01,01,01,01,02,02,02,02,03,03,03,03,04,04,04,04,05,05,05,05,06,06,06,06,07,07,07,07
+ .BYTE 08,08,08,08,09,09,09,09,10,10,10,10,11,11,11,11,12,12,12,12,13,13,13,13,14,14,14,14,15,15,15,15
+ .BYTE 16,16,16,16,17,17,17,17,18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,22,22,22,22,23,23,23,23
+ .BYTE 24,24,24,24,25,25,25,25,26,26,26,26,27,27,27,27,28,28,28,28,29,29,29,29,30,30,30,30,31,31,31,31
+
+;SCR_OR
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+; .BYTE $C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03,$C0,$30,$0C,$03
+ 
+;SCR_AND
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+; .BYTE $3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC,$3F,$CF,$F3,$FC
+
+PATTERN
+ .BYTE %00000000,%01010101,%10101010,%11111111,%00000000,%01010101,%10101010,%11111111,%00000000,%01010101,%10101010,%11111111,%00000000,%01010101,%10101010,%11111111
+ 
+SCR_SPR_32_HI
+; .BYTE >
+
+SCR_SPR_32_LO
+; .BYTE <
+ 
+.ALIGN $100
+
+SPR00_AND_LO .BYTE <(SPR00_AND_0-8),<(SPR00_AND_1-8),<(SPR00_AND_2-8),<(SPR00_AND_3-8)
+SPR00_AND_HI .BYTE >(SPR00_AND_0-8),>(SPR00_AND_1-8),>(SPR00_AND_2-8),>(SPR00_AND_3-8)
+SPR00_ORA_LO .BYTE <(SPR00_ORA_0-8),<(SPR00_ORA_1-8),<(SPR00_ORA_2-8),<(SPR00_ORA_3-8)
+SPR00_ORA_HI .BYTE >(SPR00_ORA_0-8),>(SPR00_ORA_1-8),>(SPR00_ORA_2-8),>(SPR00_ORA_3-8)
+
+SPR01_AND_LO .BYTE <(SPR01_AND_0-16),<(SPR01_AND_1-16),<(SPR01_AND_2-16),<(SPR01_AND_3-16)
+SPR01_AND_HI .BYTE >(SPR01_AND_0-16),>(SPR01_AND_1-16),>(SPR01_AND_2-16),>(SPR01_AND_3-16)
+SPR01_ORA_LO .BYTE <(SPR01_ORA_0-16),<(SPR01_ORA_1-16),<(SPR01_ORA_2-16),<(SPR01_ORA_3-16)
+SPR01_ORA_HI .BYTE >(SPR01_ORA_0-16),>(SPR01_ORA_1-16),>(SPR01_ORA_2-16),>(SPR01_ORA_3-16)
+
+SPR02_AND_LO .BYTE <(SPR02_AND_0-24),<(SPR02_AND_1-24),<(SPR02_AND_2-24),<(SPR02_AND_3-24)
+SPR02_AND_HI .BYTE >(SPR02_AND_0-24),>(SPR02_AND_1-24),>(SPR02_AND_2-24),>(SPR02_AND_3-24)
+SPR02_ORA_LO .BYTE <(SPR02_ORA_0-24),<(SPR02_ORA_1-24),<(SPR02_ORA_2-24),<(SPR02_ORA_3-24)
+SPR02_ORA_HI .BYTE >(SPR02_ORA_0-24),>(SPR02_ORA_1-24),>(SPR02_ORA_2-24),>(SPR02_ORA_3-24)
+
+SPR03_AND_LO .BYTE <(SPR03_AND_0-32),<(SPR03_AND_1-32),<(SPR03_AND_2-32),<(SPR03_AND_3-32)
+SPR03_AND_HI .BYTE >(SPR03_AND_0-32),>(SPR03_AND_1-32),>(SPR03_AND_2-32),>(SPR03_AND_3-32)
+SPR03_ORA_LO .BYTE <(SPR03_ORA_0-32),<(SPR03_ORA_1-32),<(SPR03_ORA_2-32),<(SPR03_ORA_3-32)
+SPR03_ORA_HI .BYTE >(SPR03_ORA_0-32),>(SPR03_ORA_1-32),>(SPR03_ORA_2-32),>(SPR03_ORA_3-32)
+
+SPRITE_AND_LO_LO .BYTE <SPR00_AND_LO,<SPR01_AND_LO,<SPR02_AND_LO,<SPR03_AND_LO
+SPRITE_AND_LO_HI .BYTE >SPR00_AND_LO,>SPR01_AND_LO,>SPR02_AND_LO,>SPR03_AND_LO
+SPRITE_AND_HI_LO .BYTE <SPR00_AND_HI,<SPR01_AND_HI,<SPR02_AND_HI,<SPR03_AND_HI
+SPRITE_AND_HI_HI .BYTE >SPR00_AND_HI,>SPR01_AND_HI,>SPR02_AND_HI,>SPR03_AND_HI
+SPRITE_ORA_LO_LO .BYTE <SPR00_ORA_LO,<SPR01_ORA_LO,<SPR02_ORA_LO,<SPR03_ORA_LO
+SPRITE_ORA_LO_HI .BYTE >SPR00_ORA_LO,>SPR01_ORA_LO,>SPR02_ORA_LO,>SPR03_ORA_LO
+SPRITE_ORA_HI_LO .BYTE <SPR00_ORA_HI,<SPR01_ORA_HI,<SPR02_ORA_HI,<SPR03_ORA_HI
+SPRITE_ORA_HI_HI .BYTE >SPR00_ORA_HI,>SPR01_ORA_HI,>SPR02_ORA_HI,>SPR03_ORA_HI
+SPRITE_TYPE      .BYTE 0,1,2,3
+
+;SPR00_AND_0
+; .BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+; .BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+;SPR00_AND_1
+; .BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+; .BYTE %11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000
+;SPR00_AND_2
+; .BYTE %00001111,%00001111,%00001111,%00001111,%00001111,%00001111,%00001111,%00001111
+; .BYTE %11110000,%11110000,%11110000,%11110000,%11110000,%11110000,%11110000,%11110000
+;SPR00_AND_3
+; .BYTE %00000011,%00000011,%00000011,%00000011,%00000011,%00000011,%00000011,%00000011
+; .BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+ 
+;SPR00_ORA_0
+; .BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+; .BYTE %11111111,%11011011,%11100111,%11011011,%11100111,%11011011,%11100111,%11111111
+;SPR00_ORA_1
+; .BYTE %11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000
+; .BYTE %00111111,%00110110,%00111001,%00110110,%00111001,%00110110,%00111001,%00111111
+;SPR00_ORA_2
+; .BYTE %11110000,%10110000,%01110000,%10110000,%01110000,%10110000,%01110000,%11110000
+; .BYTE %00001111,%00001101,%00001110,%00001101,%00001110,%00001101,%00001110,%00001111
+;SPR00_ORA_3
+; .BYTE %11111100,%01101100,%10011100,%01101100,%10011100,%01101100,%10011100,%11111100
+; .BYTE %00000011,%00000011,%00000011,%00000011,%00000011,%00000011,%00000011,%00000011
+
+SPR00_ORA_0
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00010100,%01111101,%01101001,%01000001,%01000001,%01101001,%01111101,%00010100
+
+SPR00_ORA_1
+.BYTE %00000000,%01000000,%01000000,%01000000,%01000000,%01000000,%01000000,%00000000
+.BYTE %00000101,%00011111,%00011010,%00010000,%00010000,%00011010,%00011111,%00000101
+
+SPR00_ORA_2
+.BYTE %01000000,%11010000,%10010000,%00010000,%00010000,%10010000,%11010000,%01000000
+.BYTE %00000001,%00000111,%00000110,%00000100,%00000100,%00000110,%00000111,%00000001
+
+SPR00_ORA_3
+.BYTE %01010000,%11110100,%10100100,%00000100,%00000100,%10100100,%11110100,%01010000
+.BYTE %00000000,%00000001,%00000001,%00000001,%00000001,%00000001,%00000001,%00000000
+
+SPR00_AND_0
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11000011,%00000000,%00000000,%00111100,%00111100,%00000000,%00000000,%11000011
+
+SPR00_AND_1
+.BYTE %11111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%11111111
+.BYTE %11110000,%11000000,%11000000,%11001111,%11001111,%11000000,%11000000,%11110000
+
+SPR00_AND_2
+.BYTE %00111111,%00001111,%00001111,%11001111,%11001111,%00001111,%00001111,%00111111
+.BYTE %11111100,%11110000,%11110000,%11110011,%11110011,%11110000,%11110000,%11111100
+
+SPR00_AND_3
+.BYTE %00001111,%00000011,%00000011,%11110011,%11110011,%00000011,%00000011,%00001111
+.BYTE %11111111,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111111
+
+
+SPR01_ORA_0
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00101000,%10111110,%10000010,%10000010,%10010110,%10111110,%10010110,%10000010
+.BYTE %10000010,%10010110,%10111110,%10010110,%10000010,%10000010,%10111110,%00101000
+
+SPR01_AND_0
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11000011,%00000000,%00111100,%00111100,%00000000,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00000000,%00111100,%00111100,%00000000,%11000011
+
+SPR01_ORA_1
+.BYTE %00000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%00000000
+.BYTE %00001010,%00101111,%00100000,%00100000,%00100101,%00101111,%00100101,%00100000
+.BYTE %00100000,%00100101,%00101111,%00100101,%00100000,%00100000,%00101111,%00001010
+
+SPR01_AND_1
+.BYTE %11111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%11111111
+.BYTE %11110000,%11000000,%11001111,%11001111,%11000000,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11000000,%11001111,%11001111,%11000000,%11110000
+
+SPR01_ORA_2
+.BYTE %10000000,%11100000,%00100000,%00100000,%01100000,%11100000,%01100000,%00100000
+.BYTE %00100000,%01100000,%11100000,%01100000,%00100000,%00100000,%11100000,%10000000
+.BYTE %00000010,%00001011,%00001000,%00001000,%00001001,%00001011,%00001001,%00001000
+.BYTE %00001000,%00001001,%00001011,%00001001,%00001000,%00001000,%00001011,%00000010
+
+SPR01_AND_2
+.BYTE %00111111,%00001111,%11001111,%11001111,%00001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00111111
+.BYTE %11111100,%11110000,%11110011,%11110011,%11110000,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110000,%11110011,%11110011,%11110000,%11111100
+
+SPR01_ORA_3
+.BYTE %10100000,%11111000,%00001000,%00001000,%01011000,%11111000,%01011000,%00001000
+.BYTE %00001000,%01011000,%11111000,%01011000,%00001000,%00001000,%11111000,%10100000
+.BYTE %00000000,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000000
+
+SPR01_AND_3
+.BYTE %00001111,%00000011,%11110011,%11110011,%00000011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%00000011,%11110011,%11110011,%00000011,%00001111
+.BYTE %11111111,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111111
+
+SPR02_ORA_0
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00101000,%10111110,%10000010,%10000010,%10010110,%10111110,%10010110,%10000010
+.BYTE %10000010,%10010110,%10010110,%10000010,%10000010,%10111110,%10111110,%10000010
+.BYTE %10000010,%10010110,%10111110,%10010110,%10000010,%10000010,%10111110,%00101000
+
+SPR02_ORA_1
+.BYTE %00000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%00000000
+.BYTE %00001010,%00101111,%00100000,%00100000,%00100101,%00101111,%00100101,%00100000
+.BYTE %00100000,%00100101,%00100101,%00100000,%00100000,%00101111,%00101111,%00100000
+.BYTE %00100000,%00100101,%00101111,%00100101,%00100000,%00100000,%00101111,%00001010
+
+SPR02_ORA_2
+.BYTE %10000000,%11100000,%00100000,%00100000,%01100000,%11100000,%01100000,%00100000
+.BYTE %00100000,%01100000,%01100000,%00100000,%00100000,%11100000,%11100000,%00100000
+.BYTE %00100000,%01100000,%11100000,%01100000,%00100000,%00100000,%11100000,%10000000
+.BYTE %00000010,%00001011,%00001000,%00001000,%00001001,%00001011,%00001001,%00001000
+.BYTE %00001000,%00001001,%00001001,%00001000,%00001000,%00001011,%00001011,%00001000
+.BYTE %00001000,%00001001,%00001011,%00001001,%00001000,%00001000,%00001011,%00000010
+
+SPR02_ORA_3
+.BYTE %10100000,%11111000,%00001000,%00001000,%01011000,%11111000,%01011000,%00001000
+.BYTE %00001000,%01011000,%01011000,%00001000,%00001000,%11111000,%11111000,%00001000
+.BYTE %00001000,%01011000,%11111000,%01011000,%00001000,%00001000,%11111000,%10100000
+.BYTE %00000000,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000000
+
+SPR02_AND_0
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11000011,%00000000,%00111100,%00111100,%00000000,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00111100,%00111100,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00000000,%00111100,%00111100,%00000000,%11000011
+
+SPR02_AND_1
+.BYTE %11111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%11111111
+.BYTE %11110000,%11000000,%11001111,%11001111,%11000000,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11001111,%11001111,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11000000,%11001111,%11001111,%11000000,%11110000
+
+SPR02_AND_2
+.BYTE %00111111,%00001111,%11001111,%11001111,%00001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00111111
+.BYTE %11111100,%11110000,%11110011,%11110011,%11110000,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110011,%11110011,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110000,%11110011,%11110011,%11110000,%11111100
+
+SPR02_AND_3
+.BYTE %00001111,%00000011,%11110011,%11110011,%00000011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%11110011,%11110011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%00000011,%11110011,%11110011,%00000011,%00001111
+.BYTE %11111111,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111111
+
+
+SPR03_ORA_0
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+.BYTE %00101000,%10111110,%10000010,%10000010,%10010110,%10111110,%10010110,%10000010
+.BYTE %10000010,%10010110,%10010110,%10000010,%10000010,%10111110,%10111110,%10000010
+.BYTE %10000010,%10010110,%10010110,%10000010,%10000010,%10111110,%10111110,%10000010
+.BYTE %10000010,%10010110,%10111110,%10010110,%10000010,%10000010,%10111110,%00101000
+
+SPR03_ORA_1
+.BYTE %00000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000
+.BYTE %10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%10000000,%00000000
+.BYTE %00001010,%00101111,%00100000,%00100000,%00100101,%00101111,%00100101,%00100000
+.BYTE %00100000,%00100101,%00100101,%00100000,%00100000,%00101111,%00101111,%00100000
+.BYTE %00100000,%00100101,%00100101,%00100000,%00100000,%00101111,%00101111,%00100000
+.BYTE %00100000,%00100101,%00101111,%00100101,%00100000,%00100000,%00101111,%00001010
+
+SPR03_ORA_2
+.BYTE %10000000,%11100000,%00100000,%00100000,%01100000,%11100000,%01100000,%00100000
+.BYTE %00100000,%01100000,%01100000,%00100000,%00100000,%11100000,%11100000,%00100000
+.BYTE %00100000,%01100000,%01100000,%00100000,%00100000,%11100000,%11100000,%00100000
+.BYTE %00100000,%01100000,%11100000,%01100000,%00100000,%00100000,%11100000,%10000000
+.BYTE %00000010,%00001011,%00001000,%00001000,%00001001,%00001011,%00001001,%00001000
+.BYTE %00001000,%00001001,%00001001,%00001000,%00001000,%00001011,%00001011,%00001000
+.BYTE %00001000,%00001001,%00001001,%00001000,%00001000,%00001011,%00001011,%00001000
+.BYTE %00001000,%00001001,%00001011,%00001001,%00001000,%00001000,%00001011,%00000010
+
+SPR03_ORA_3
+.BYTE %10100000,%11111000,%00001000,%00001000,%01011000,%11111000,%01011000,%00001000
+.BYTE %00001000,%01011000,%01011000,%00001000,%00001000,%11111000,%11111000,%00001000
+.BYTE %00001000,%01011000,%01011000,%00001000,%00001000,%11111000,%11111000,%00001000
+.BYTE %00001000,%01011000,%11111000,%01011000,%00001000,%00001000,%11111000,%10100000
+.BYTE %00000000,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010
+.BYTE %00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000010,%00000000
+
+SPR03_AND_0
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111
+.BYTE %11000011,%00000000,%00111100,%00111100,%00000000,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00111100,%00111100,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00111100,%00111100,%00000000,%00000000,%00111100
+.BYTE %00111100,%00000000,%00000000,%00000000,%00111100,%00111100,%00000000,%11000011
+
+SPR03_AND_1
+.BYTE %11111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111
+.BYTE %00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%11111111
+.BYTE %11110000,%11000000,%11001111,%11001111,%11000000,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11001111,%11001111,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11001111,%11001111,%11000000,%11000000,%11001111
+.BYTE %11001111,%11000000,%11000000,%11000000,%11001111,%11001111,%11000000,%11110000
+
+SPR03_AND_2
+.BYTE %00111111,%00001111,%11001111,%11001111,%00001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00001111,%11001111
+.BYTE %11001111,%00001111,%00001111,%00001111,%11001111,%11001111,%00001111,%00111111
+.BYTE %11111100,%11110000,%11110011,%11110011,%11110000,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110011,%11110011,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110011,%11110011,%11110000,%11110000,%11110011
+.BYTE %11110011,%11110000,%11110000,%11110000,%11110011,%11110011,%11110000,%11111100
+
+SPR03_AND_3
+.BYTE %00001111,%00000011,%11110011,%11110011,%00000011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%11110011,%11110011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%11110011,%11110011,%00000011,%00000011,%11110011
+.BYTE %11110011,%00000011,%00000011,%00000011,%11110011,%11110011,%00000011,%00001111
+.BYTE %11111111,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100
+.BYTE %11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111111
+
+SPRITE_SCB_TSB_LO   .BYTE <SCB_TSB_08,<SCB_TSB_16,<SCB_TSB_24,<SCB_TSB_32
+SPRITE_SCB_TSB_HI   .BYTE >SCB_TSB_08,>SCB_TSB_16,>SCB_TSB_24,>SCB_TSB_32
+SPRITE_SCB_TSB_SIZE .BYTE 1,1,1,1
+
+SPRITE_SPR_TMP_LO   .BYTE <SPR_TSB_08,<SPR_TSB_16,<SPR_TSB_24,<SPR_TSB_32
+SPRITE_SPR_TMP_HI   .BYTE >SPR_TSB_08,>SPR_TSB_16,>SPR_TSB_24,>SPR_TSB_32
+SPRITE_SPR_TMP_SIZE .BYTE 16,32,48,64
+
+SPRITE_TSB_SCN_LO   .BYTE <TSB_SCN_08,<TSB_SCN_16,<TSB_SCN_24,<TSB_SCN_32
+SPRITE_TSB_SCN_HI   .BYTE >TSB_SCN_08,>TSB_SCN_16,>TSB_SCN_24,>TSB_SCN_32 
+ 
+.ALIGN $1000
+SCN	       			; screen	
+SCB	EQU	SCN + 6144	; screen buffer holding screen background
+TSB EQU SCB + 6144	; temp screen buffer copy from SCB and copied to SCN
