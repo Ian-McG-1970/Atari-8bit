@@ -2675,9 +2675,6 @@ PCC
 .REPT	MAX_PNT
 	.BYTE 0
 .ENDR
-
- ICL 'perstab2k32k.s'
- ICL 'perstabshift2k.s'
  
 .ALIGN $5000
 SCR_0	       	
