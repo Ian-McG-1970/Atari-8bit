@@ -1,0 +1,1805 @@
+mads 2.1.3 build 45 (7 Jun 21)
+Source: robotron_32col_v15.asm
+     1
+     2 = 0020				SCR_WID	EQU 32
+     3 = 0020				SW		EQU SCR_WID
+     4
+     5 = 000E				SCREEN_MODE	EQU	$0E
+     6 = 000E				SM			EQU	SCREEN_MODE
+     7 = 0070				BLANK_LINE	EQU $70
+     8 = 0040				SCREEN_ADR	EQU	$40
+     9 = 0041				DISP_LIST	EQU	$41
+    10 = 0080				DLI_INT		EQU	$80
+    11
+    12 = 0080				SCR0 	EQU	128
+    13 = 0082				SCR1 	EQU	SCR0 +2
+    14 = 0084				SCR2 	EQU	SCR1 +2
+    15 = 0086				SCR3 	EQU	SCR2 +2
+    16 = 0088				SCR4 	EQU	SCR3 +2
+    17 = 008A				SCR5 	EQU	SCR4 +2
+    18 = 008C				SCR6 	EQU	SCR5 +2
+    19 = 008E				SCR7 	EQU	SCR6 +2
+    20
+    21 = 0090				REGA EQU SCR7 +2
+    22 = 0091				REGX EQU REGA +1
+    23 = 0092				REGY EQU REGX +1
+    24
+    25 = 0093				SCR0_OBJ_CNT EQU REGY +1
+    26 = 0094				SCR1_OBJ_CNT EQU SCR0_OBJ_CNT +1
+    27 = 0095				OBJECT_TYPE	 EQU SCR1_OBJ_CNT +1
+    28 					
+    29 = 0096				TV	EQU	OBJECT_TYPE +1
+    30 = 0097				TH	EQU	TV +1
+    31 = 0098				FIRE EQU TH +1
+    32 					
+    33 = 0099				SPR_AND EQU FIRE +1
+    34 = 009B				SPR_ORA EQU SPR_AND +2
+    35
+    36 				 ICL 'hardware.s'
+Source: hardware.s
+     1 = 0000			LINZBS   = $0000
+     2 = 0002			CASINI   = $0002
+     3 = 0004			RAMLO    = $0004
+     4 = 0006			TRAMSZ   = $0006
+     5 = 0007			TSTDAT   = $0007
+     6 = 0008			WARMST   = $0008
+     7 = 0009			BOOT?    = $0009
+     8 = 000A			DOSVEC   = $000a
+     9 = 000C			DOSINI   = $000c
+    10 = 000E			APPMHI   = $000e
+    11 = 0010			POKMSK   = $0010
+    12 = 0011			BRKKEY   = $0011
+    13 = 0012			RTCLOK   = $0012
+    14 = 0015			BUFADR   = $0015
+    15 = 0017			ICCOMT   = $0017
+    16 = 0018			DSKFMS   = $0018
+    17 = 001A			DSKUTL   = $001a
+    18 = 001C			PTIMOT   = $001c
+    19 = 001D			PBPNT    = $001d
+    20 = 001E			PBUFSZ   = $001e
+    21 = 001F			PTEMP    = $001f
+    22 = 0020			ICHIDZ   = $0020
+    23 = 0021			ICDNOZ   = $0021
+    24 = 0022			ICCOMZ   = $0022
+    25 = 0023			ICSTAZ   = $0023
+    26 = 0024			ICBALZ   = $0024
+    27 = 0026			ICPTLZ   = $0026
+    28 = 0028			ICBLLZ   = $0028
+    29 = 002A			ICAX1Z   = $002a
+    30 = 002B			ICAX2Z   = $002b
+    31 = 002C			ICAX3Z   = $002c
+    32 = 002C			ICAX4Z   = $002c
+    33 = 002E			ICAX5Z   = $002e
+    34 = 002F			ICAX6Z   = $002f
+    35 = 0030			STATUS   = $0030
+    36 = 0031			CHKSUM   = $0031
+    37 = 0032			BUFRLO   = $0032
+    38 = 0033			BUFRHI   = $0033
+    39 = 0034			BFENLO   = $0034
+    40 = 0035			BFENHI   = $0035
+    41 = 0036			CRETRY   = $0036
+    42 = 0037			DRETRY   = $0037
+    43 = 0038			BUFRFL   = $0038
+    44 = 0039			RECVDN   = $0039
+    45 = 003A			XMTDON   = $003a
+    46 = 003B			CHKSNT   = $003b
+    47 = 003C			NOCKSM   = $003c
+    48 = 003D			BPTR     = $003d
+    49 = 003E			FTYPE    = $003e
+    50 = 003F			FEOF     = $003f
+    51 = 0040			FREQ     = $0040
+    52 = 0041			SOUNDR   = $0041
+    53 = 0042			CRITIC   = $0042
+    54 = 0043			FMZSPG   = $0043
+    55 = 0045			ZDRVA    = $0045
+    56 = 0047			ZSBA     = $0047
+    57 = 0049			ERRNO    = $0049
+    58 = 004A			CKEY     = $004a
+    59 = 004B			CASSBT   = $004b
+    60 = 004C			DSTAT    = $004c
+    61 = 004D			ATRACT   = $004d
+    62 = 004E			DRKMSK   = $004e
+    63 = 004F			COLRSH   = $004f
+    64 = 0050			TMPCHR   = $0050
+    65 = 0051			HOLD1    = $0051
+    66 = 0052			LMARGN   = $0052
+    67 = 0053			RMARGN   = $0053
+    68 = 0054			ROWCRS   = $0054
+    69 = 0055			COLCRS   = $0055
+    70 = 0057			DINDEX   = $0057
+    71 = 0058			SAVMSC   = $0058
+    72 = 005A			OLDROW   = $005a
+    73 = 005B			OLDCOL   = $005b
+    74 = 005D			OLDCHR   = $005d
+    75 = 005E			OLDADR   = $005e
+    76 = 0060			NEWROW   = $0060
+    77 = 0061			NEWCOL   = $0061
+    78 = 0063			LOGCOL   = $0063
+    79 = 0064			ADRESS   = $0064
+    80 = 0066			MLTTMP   = $0066
+    81 = 0068			SAVADR   = $0068
+    82 = 006A			RAMTOP   = $006a
+    83 = 006B			BUFCNT   = $006b
+    84 = 006C			BUFSTR   = $006c
+    85 = 006E			BITMSK   = $006e
+    86 = 006F			SHFAMT   = $006f
+    87 = 0070			ROWAC    = $0070
+    88 = 0072			COLAC    = $0072
+    89 = 0074			ENDPT    = $0074
+    90 = 0076			DELTAR   = $0076
+    91 = 0077			DELTAC   = $0077
+    92 = 0079			ROWINC   = $0079
+    93 = 007A			COLINC   = $007a
+    94 = 007B			SWPFLG   = $007b
+    95 = 007C			HOLDCH   = $007c
+    96 = 007D			INSDAT   = $007d
+    97 = 007E			COUNTR   = $007e
+    98
+    99 				; hardware shadow registers
+   100 = 0200			VDSLST   = $0200
+   101 = 0202			VPRCED   = $0202
+   102 = 0204			VINTER   = $0204
+   103 = 0206			VBREAK   = $0206
+   104 = 0208			VKEYBD   = $0208
+   105 = 020A			VSERIN   = $020a
+   106 = 020C			VSEROR   = $020c
+   107 = 020E			VSEROC   = $020e
+   108 = 0210			VTIMR1   = $0210
+   109 = 0212			VTIMR2   = $0212
+   110 = 0214			VTIMR4   = $0214
+   111 = 0216			VIMIRQ   = $0216
+   112 = 0218			CDTMV1   = $0218
+   113 = 021A			CDTMV2   = $021a
+   114 = 021C			CDTMV3   = $021c
+   115 = 021E			CDTMV4   = $021e
+   116 = 0220			CDTMV5   = $0220
+   117 = 0222			VVBLKI   = $0222
+   118 = 0224			VVBLKD   = $0224
+   119 = 0226			CDTMA1   = $0226
+   120 = 0228			CDTMA2   = $0228
+   121 = 022A			CDTMF3   = $022a
+   122 = 022B			SRTIMR   = $022b
+   123 = 022C			CDTMF4   = $022c
+   124 = 022D			INTEMP   = $022d
+   125 = 022E			CDTMF5   = $022e
+   126 = 022F			SDMCTL   = $022f
+   127 = 0230			SDLSTL   = $0230
+   128 = 0232			SSKCTL   = $0232
+   129 = 0233			SPARE    = $0233
+   130 = 0234			LPENH    = $0234
+   131 = 0235			LPENV    = $0235
+   132 = 0236			BRKKY    = $0236
+   133 = 023A			CDEVIC   = $023a
+   134 = 023B			CCOMND   = $023b
+   135 = 023C			CAUX1    = $023c
+   136 = 023D			CAUX2    = $023d
+   137 = 023E			TEMP     = $023e
+   138 = 023F			ERRFLG   = $023f
+   139 = 0240			DFLAGS   = $0240
+   140 = 0241			DBSECT   = $0241
+   141 = 0242			BOOTAD   = $0242
+   142 = 0244			COLDST   = $0244
+   143 = 0246			DSKTIM   = $0246
+   144 = 0247			LINBUF   = $0247
+   145 = 026F			GPRIOR   = $026f
+   146 = 0270			PADDL0   = $0270
+   147 = 0271			PADDL1   = $0271
+   148 = 0272			PADDL2   = $0272
+   149 = 0273			PADDL3   = $0273
+   150 = 0274			PADDL4   = $0274
+   151 = 0275			PADDL5   = $0275
+   152 = 0276			PADDL6   = $0276
+   153 = 0277			PADDL7   = $0277
+   154 = 0278			STICK0   = $0278
+   155 = 0279			STICK1   = $0279
+   156 = 027A			STICK2   = $027a
+   157 = 027B			STICK3   = $027b
+   158 = 027C			PTRIG0   = $027c
+   159 = 027D			PTRIG1   = $027d
+   160 = 027E			PTRIG2   = $027e
+   161 = 027F			PTRIG3   = $027f
+   162 = 0280			PTRIG4   = $0280
+   163 = 0281			PTRIG5   = $0281
+   164 = 0282			PTRIG6   = $0282
+   165 = 0283			PTRIG7   = $0283
+   166 = 0284			STRIG0   = $0284
+   167 = 0285			STRIG1   = $0285
+   168 = 0286			STRIG2   = $0286
+   169 = 0287			STRIG3   = $0287
+   170 = 0288			CSTAT    = $0288
+   171 = 0289			WMODE    = $0289
+   172 = 028A			BLIM     = $028a
+   173 = 0290			TXTROW   = $0290
+   174 = 0291			TXTCOL   = $0291
+   175 = 0293			TINDEX   = $0293
+   176 = 0294			TXTMSC   = $0294
+   177 = 0296			TXTOLD   = $0296
+   178 = 029C			TMPX1    = $029c
+   179 = 029D			HOLD3    = $029d
+   180 = 029E			SUBTMP   = $029e
+   181 = 029F			HOLD2    = $029f
+   182 = 02A0			DMASK    = $02a0
+   183 = 02A1			TMPLBT   = $02a1
+   184 = 02A2			ESCFLG   = $02a2
+   185 = 02A3			TABMAP   = $02a3
+   186 = 02B2			LOGMAP   = $02b2
+   187 = 02B6			INVFLG   = $02b6
+   188 = 02B7			FILFLG   = $02b7
+   189 = 02B8			TMPROW   = $02b8
+   190 = 02B9			TMPCOL   = $02b9
+   191 = 02BB			SCRFLG   = $02bb
+   192 = 02BC			HOLD4    = $02bc
+   193 = 02BD			HOLD5    = $02bd
+   194 = 02BE			SHFLOK   = $02be
+   195 = 02BF			BOTSCR   = $02bf
+   196 = 02C0			PCOLR0   = $02c0
+   197 = 02C1			PCOLR1   = $02c1
+   198 = 02C2			PCOLR2   = $02c2
+   199 = 02C3			PCOLR3   = $02c3
+   200 = 02C4			COLOR0   = $02c4
+   201 = 02C5			COLOR1   = $02c5
+   202 = 02C6			COLOR2   = $02c6
+   203 = 02C7			COLOR3   = $02c7
+   204 = 02C8			COLOR4   = $02c8
+   205
+   206 				; IO space
+   207 = 02E0			RUNAD    = $02e0
+   208 = 02E2			INITAD   = $02e2
+   209 = 02E4			RAMSIZ   = $02e4
+   210 = 02E5			MEMTOP   = $02e5
+   211 = 02E7			MEMLO    = $02e7
+   212 = 02EA			DVSTAT   = $02ea
+   213 = 02EE			CBAUDL   = $02ee
+   214 = 02EF			CBAUDH   = $02ef
+   215 = 02F0			CRSINH   = $02f0
+   216 = 02F1			KEYDEL   = $02f1
+   217 = 02F2			CH1      = $02f2
+   218 = 02F3			CHACT    = $02f3
+   219 = 02F4			CHBAS    = $02f4
+   220 = 02FA			CHAR     = $02fa
+   221 = 02FB			ATACHR   = $02fb
+   222 = 02FC			CH       = $02fc
+   223 = 02FD			FILDAT   = $02fd
+   224 = 02FE			DSPFLG   = $02fe
+   225 = 02FF			SSFLAG   = $02ff
+   226 = 0300			DDEVIC   = $0300
+   227 = 0301			DUNIT    = $0301
+   228 = 0302			DCOMND   = $0302
+   229 = 0303			DSTATS   = $0303
+   230 = 0304			DBUFLO   = $0304
+   231 = 0305			DBUFHI   = $0305
+   232 = 0306			DTIMLO   = $0306
+   233 = 0307			DUNUSE   = $0307
+   234 = 0308			DBYTLO   = $0308
+   235 = 0309			DBYTHI   = $0309
+   236 = 030A			DAUX1    = $030a
+   237 = 030B			DAUX2    = $030b
+   238 = 030C			TIMER1   = $030c
+   239 = 030E			ADDCOR   = $030e
+   240 = 030F			CASFLG   = $030f
+   241 = 0310			TIMER2   = $0310
+   242 = 0312			TEMP1    = $0312
+   243 = 0314			TEMP2    = $0314
+   244 = 0315			TEMP3    = $0315
+   245 = 0316			SAVIO    = $0316
+   246 = 0317			TIMFLG   = $0317
+   247 = 0318			STACKP   = $0318
+   248 = 0319			TSTAT    = $0319
+   249 = 031A			HATABS   = $031a
+   250 = 0340			IOCB0    = $0340
+   251 = 0350			IOCB1    = $0350
+   252 = 0360			IOCB2    = $0360
+   253 = 0370			IOCB3    = $0370
+   254 = 0380			IOCB4    = $0380
+   255 = 0390			IOCB5    = $0390
+   256 = 03A0			IOCB6    = $03a0
+   257 = 03B0			IOCB7    = $03b0
+   258 = 03C0			PRNBUF   = $03c0
+   259 = 03FD			CASBUF   = $03fd
+   260
+   261 				; GTIA write locations
+   262 = D000			HPOSP0   = $d000
+   263 = D001			HPOSP1   = $d001
+   264 = D002			HPOSP2   = $d002
+   265 = D003			HPOSP3   = $d003
+   266 = D004			HPOSM0   = $d004
+   267 = D005			HPOSM1   = $d005
+   268 = D006			HPOSM2   = $d006
+   269 = D007			HPOSM3   = $d007
+   270 = D008			SIZEP0   = $d008
+   271 = D009			SIZEP1   = $d009
+   272 = D00A			SIZEP2   = $d00a
+   273 = D00B			SIZEP3   = $d00b
+   274 = D00C			SIZEM    = $d00c
+   275 = D00D			GRAFP0   = $d00d
+   276 = D00E			GRAFP1   = $d00e
+   277 = D00F			GRAFP2   = $d00f
+   278 = D010			GRAFP3   = $d010
+   279 = D011			GRAFM    = $d011
+   280 = D012			COLPM0   = $d012
+   281 = D013			COLPM1   = $d013
+   282 = D014			COLPM2   = $d014
+   283 = D015			COLPM3   = $d015
+   284 = D016			COLPF0   = $d016
+   285 = D017			COLPF1   = $d017
+   286 = D018			COLPF2   = $d018
+   287 = D019			COLPF3   = $d019
+   288 = D01A			COLBK    = $d01a
+   289 = D01B			PRIOR    = $d01b
+   290 = D01C			VDELAY   = $d01c
+   291 = D01D			GRACTL   = $d01d
+   292 = D01E			HITCLR   = $d01e
+   293 = D01F			CONSOL   = $d01f
+   294
+   295 				; GTIA read locations
+   296 = D000			M0PF     = $d000
+   297 = D001			M1PF     = $d001
+   298 = D002			M2PF     = $d002
+   299 = D003			M3PF     = $d003
+   300 = D004			P0PF     = $d004
+   301 = D005			P1PF     = $d005
+   302 = D006			P2PF     = $d006
+   303 = D007			P3PF     = $d007
+   304 = D008			M0PL     = $d008
+   305 = D009			M1PL     = $d009
+   306 = D00A			M2PL     = $d00a
+   307 = D00B			M3PL     = $d00b
+   308 = D00C			P0PL     = $d00c
+   309 = D00D			P1PL     = $d00d
+   310 = D00E			P2PL     = $d00e
+   311 = D00F			P3PL     = $d00f
+   312 = D010			TRIG0    = $d010
+   313 = D011			TRIG1    = $d011
+   314 = D012			TRIG2    = $d012
+   315 = D013			TRIG3    = $d013
+   316 = D014			PAL      = $d014
+   317
+   318 				; POKEY write locations
+   319 = D200			AUDF1    = $d200
+   320 = D201			AUDC1    = $d201
+   321 = D202			AUDF2    = $d202
+   322 = D203			AUDC2    = $d203
+   323 = D204			AUDF3    = $d204
+   324 = D205			AUDC3    = $d205
+   325 = D206			AUDF4    = $d206
+   326 = D207			AUDC4    = $d207
+   327 = D208			AUDCTL   = $d208
+   328 = D209			STIMER   = $d209
+   329 = D20A			SKREST   = $d20a
+   330 = D20B			POTGO    = $d20b
+   331 = D20D			SEROUT   = $d20d
+   332 = D20E			IRQEN    = $d20e
+   333 = D20F			SKCTL    = $d20f
+   334
+   335 				; POKEY read locations
+   336 = D200			POT0     = $d200
+   337 = D201			POT1     = $d201
+   338 = D202			POT2     = $d202
+   339 = D203			POT3     = $d203
+   340 = D204			POT4     = $d204
+   341 = D205			POT5     = $d205
+   342 = D206			POT6     = $d206
+   343 = D207			POT7     = $d207
+   344 = D208			ALLPOT   = $d208
+   345 = D209			KBCODE   = $d209
+   346 = D20A			RANDOM   = $d20a
+   347 = D20D			SERIN    = $d20d
+   348 = D20E			IRQST    = $d20e
+   349 = D20F			SKSTAT   = $d20f
+   350
+   351 				; PIA
+   352 = D300			PORTA    = $d300
+   353 = D301			PORTB    = $d301
+   354 = D302			PACTL    = $d302
+   355 = D303			PBCTL    = $d303
+   356
+   357 				; ANTIC write locations
+   358 = D400			DMACTL   = $d400
+   359 = D401			CHACTL   = $d401
+   360 = D402			DLISTL   = $d402
+   361 = D403			DLISTH   = $d403
+   362 = D404			HSCROL   = $d404
+   363 = D405			VSCROL   = $d405
+   364 = D407			PMBASE   = $d407
+   365 = D409			CHBASE   = $d409
+   366 = D40A			WSYNC    = $d40a
+   367 = D40E			NMIEN    = $d40e
+   368 = D40F			NMIRES   = $d40f
+   369
+   370 				; ANTIC read locations
+   371 = D40B			VCOUNT   = $d40b
+   372 = D40C			PENH     = $d40c
+   373 = D40D			PENV     = $d40d
+   374 = D40F			NMIST    = $d40f
+   375 = 0080			 NMIEN_DLI = $80
+   376 = 0040			 NMIEN_VBI = $40
+   377
+   378 				; vector tables
+   379 = E400			EDITRV   = $e400
+   380 = E410			SCRENV   = $e410
+   381 = E420			KEYBDV   = $e420
+   382 = E430			PRINTV   = $e430
+   383 = E440			CASETV   = $e440
+   384 = E450			DISKIV   = $e450
+   385 = E453			DSKINV   = $e453
+   386 = E456			CIOV     = $e456
+   387 = E459			SIOV     = $e459
+   388 = E45C			SETVBV   = $e45c
+   389 = E45F			SYSVBV   = $e45f
+   390 = E462			XITVBV   = $e462
+   391 = E465			SIOINV   = $e465
+   392 = E468			SENDEV   = $e468
+   393 = E46B			INTINV   = $e46b
+   394 = E46E			CIOINV   = $e46e
+   395 = E471			BLKBDV   = $e471
+   396 = E474			WARMSV   = $e474
+   397 = E477			COLDSV   = $e477
+   398 = E47A			RBLOKV   = $e47a
+   399 = E47D			CSOPIV   = $e47d
+    37
+    38 				.MACRO	BORDER	COL
+    39 							LDA #:1
+    40 							STA COLBK
+    41 				.ENDM 
+    42
+    43 					ORG $800
+    44 								
+    45 FFFF> 0800-0D4C> 78	INIT	SEI
+    46 0801 D8					CLD
+    47 0802 A2 FF				LDX	#$FF
+    48 0804 9A					TXS
+    49
+    50 0805 AD 01 D3				LDA PORTB ; disable basic
+    51 0808 09 02				ORA #$02
+    52 080A 8D 01 D3				STA PORTB
+    53 							 	
+    54 080D A9 00				LDA #$00 ; disable antic
+    55 080F 8D 2F 02			    STA SDMCTL
+    56 0812 8D 00 D4			    STA DMACTL
+    57
+    58 0815 A9 B6				LDA #$B6 	; set colours
+    59 				;		STA	COLPF0 
+    60 0817 8D C4 02				STA COLOR0
+    61 081A A9 32				LDA #$32
+    62 				;		STA	COLPF1 
+    63 081C 8D C5 02				STA COLOR1
+    64 081F A9 0E				LDA #$0E
+    65 				;		STA COLPF2 
+    66 0821 8D C6 02				STA COLOR2
+    67 0824 A9 00				LDA #$00
+    68 0826 8D C8 02				STA COLOR4; background / border
+    69
+    70 0829 A2 00				LDX #<DISPLAY_LIST	; Extract low BYTE from DISPLAY_LIST and store it in SDLSTL
+    71 082B A0 0E				LDY #>DISPLAY_LIST
+    72 082D 8E 30 02				STX SDLSTL
+    73 0830 8C 31 02				STY SDLSTL+1		; Therefore tell antic the starting address of the custom display list.
+    74
+    75 0833 A2 2E		        LDX #<DLI	; load display list interrupt address
+    76 0835 A0 0A		        LDY #>DLI
+    77 0837 8E 00 02				STX VDSLST
+    78 083A 8C 01 02		        STY VDSLST+1
+    79
+    80 083D A2 AF				ldx #<IRQ
+    81 083F A0 08		        ldy #>IRQ
+    82 0841 8E 16 02		        stx VIMIRQ
+    83 0844 8C 17 02		        sty VIMIRQ+1
+    84
+    85 				;        ldx #<VBLANK
+    86 				;        ldy #>VBLANK
+    87 				;        stx VVBLKI
+    88 				;        sty VVBLKI+1
+    89 				 
+    90 0847 A9 21				LDA #$21 			; narrow 23 wide ; #$22       		;
+    91 0849 8D 2F 02				STA SDMCTL     		; Store literal $23 in SDMCTL - therefore switch ANTIC back on to narrow.
+    92 						
+    93 084C A9 32				LDA #50
+    94 084E 85 97				STA TH
+    95 0850 85 96				STA	TV
+    96 				;		LDA	#22
+    97 				;		STA	SCR0_OBJ_CNT
+    98 				;		STA	SCR1_OBJ_CNT
+    99 						
+   100 0852 A9 00				LDA #%0 ;10101010
+   101 0854 A2 00				LDX #<SCN0_T ; SCN
+   102 0856 A0 20				LDY #>SCN0_T ; SCN
+   103 0858 86 80				STX SCR0+0
+   104 085A 84 81				STY SCR0+1
+   105 085C A2 10				LDX #>(128*SW)
+   106 085E A0 00				LDY #<(128*SW)
+   107 0860 20 2E 0D				JSR	MEMSET
+   108 						
+   109 0863 A9 00				LDA #%0 ;1011010
+   110 0865 A2 00				LDX #<SCN0_B ; SCN
+   111 0867 A0 30				LDY #>SCN0_B ; SCN
+   112 0869 86 80				STX SCR0+0
+   113 086B 84 81				STY SCR0+1
+   114 086D A2 08				LDX #>(64*SW)
+   115 086F A0 00				LDY #<(64*SW)
+   116 0871 20 2E 0D				JSR	MEMSET
+   117
+   118 0874 A9 00				LDA #%0 ;0000000
+   119 0876 A2 00				LDX #<SCN1_T ; SCN
+   120 0878 A0 40				LDY #>SCN1_T ; SCN
+   121 087A 86 80				STX SCR0+0
+   122 087C 84 81				STY SCR0+1
+   123 087E A2 10				LDX #>(128*SW)
+   124 0880 A0 00				LDY #<(128*SW)
+   125 0882 20 2E 0D				JSR	MEMSET
+   126 						
+   127 0885 A9 00				LDA #%0 ;0001111
+   128 0887 A2 00				LDX #<SCN1_B ; SCN
+   129 0889 A0 50				LDY #>SCN1_B ; SCN
+   130 088B 86 80				STX SCR0+0
+   131 088D 84 81				STY SCR0+1
+   132 088F A2 08				LDX #>(64*SW)
+   133 0891 A0 00				LDY #<(64*SW)
+   134 0893 20 2E 0D				JSR	MEMSET
+   135
+   136 0896 A9 C0		        LDA #NMIEN_VBI | NMIEN_DLI	; activate display list interrupt
+   137 0898 8D 0E D4		        STA NMIEN
+   138
+   139 089B 58					CLI
+   140 						
+   141 089C			MLOOP
+   142 089C 20 F5 0C			JSR	MOVE_HV
+   143 089F 4C 9C 08				JMP	MLOOP
+   144
+   145 08A2			.LOCAL	VBLANK ; notify main loop that VBLANK processing is done, when we are finished.
+   146 08A2 48					pha
+   147 08A3						BORDER $1C
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 08A3 A9 1C					LDA #$1C
+     2 08A5 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   148 				;                lda     #$FF
+   149 				;                sta     VBL_DONE
+   150 08A8						BORDER 0
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 08A8 A9 00					LDA #0
+     2 08AA 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   151 				 
+   152 08AD 68					pla
+   153 08AE 40			        rti
+   154 				.ENDL
+   155
+   156 08AF			.LOCAL	IRQ
+   157 08AF 48					pha
+   158 08B0						BORDER $3A
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 08B0 A9 3A					LDA #$3A
+     2 08B2 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   159 08B5 A9 00		                lda     #0
+   160 08B7 8D 0E D2		                sta     IRQEN
+   161 08BA A9 40		                lda     #$40
+   162 08BC 8D 0E D2		                sta     IRQEN
+   163 08BF AD 09 D2		                lda     KBCODE
+   164 08C2 09 C0		                ora     #$C0
+   165 				 ;               sta     MY_KEY
+   166 08C4						BORDER 0
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 08C4 A9 00					LDA #0
+     2 08C6 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   167 08C9 68			                pla
+   168 08CA 40			                rti
+   169 				.ENDL
+   170
+   171 08CB 17			TMP_CNT	.BYTE	23
+   172 08CC 00 01 75 75 03 0F + TMPH	.BYTE 	0,1,117,117,3,15,22,25,33,35,43,45,53,57,63,67,73,73,81,83,91,93,103,107,113,115,121,111
+   173 08E8 00 B5 03 B3 03 11 + TMPV	.BYTE 	0,181,3,179,3,17,21,27,31,35,41,45,51,55,61,65,71,75,81,85,91,95,101,105,111,115,121,113
+   174 				;TMPH	.BYTE 	0,0,116,116,2,16,20,26,32,36,42,46,52,56,62,66,72,76,82,86,92,96,102,106,112,116,122,110
+   175 				;TMPV	.BYTE 	0,180,2,178,2,16,22,26,32,36,42,46,52,56,62,66,72,76,82,86,92,96,102,106,112,116,122,112
+   176 0904 00 00 00 00 00 00 + TMPT	.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+   177 0924 00 FF 01 01 FF 01 + TMPMH	.BYTE	0,-1,+1,+1,-1,+1,+1,-1,-1,+1,+1,-1,-1,+1,+1,-1,-1,+1,+1,-1,-1,+1,+1,-1,-1,+1,+1,-1,-1,+1
+   178 0942 00 FF 01 FF 01 FF + TMPMV	.BYTE	0,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1,+1,-1
+   179
+   180 0960			.LOCAL	CLEAR_SPRITES ; y moves to x and a moves to y
+   181 0960 A2 00		CLEAR_CNT	LDX #0
+   182 0962 8E 74 09		LOOP			STX	NEXT +1
+   183 0965 BD 22 16		CLEAR_H			LDA SCR0_OBJ_H,X ;   ,y
+   184 0968 85 91						STA REGX
+   185 096A BD 02 16		CLEAR_V			LDA SCR0_OBJ_V,X ;   ,y
+   186 096D BC 42 16		CLEAR_T			LDY SCR0_OBJ_T,X ; x ,y
+   187 0970 20 A8 0A						JSR CLEAR_SPRITE
+   188 0973 A2 00		NEXT			LDX #0
+   189 0975 CA							DEX
+   190 0976 10 EA						BPL	LOOP
+   191 0978 60						RTS
+   192 				.ENDL
+   193
+   194 0979			.LOCAL	DRAW_SPRITES
+   195 0979 A2 00		DRAW_CNT	LDX #0
+   196 097B 8E 8F 09		LOOP			STX NEXT +1
+   197 097E BD 62 16		DRAW_V			LDA SCR1_OBJ_V,X
+   198 0981 85 92						STA REGY
+   199 0983 BD 82 16		DRAW_H			LDA SCR1_OBJ_H,X
+   200 0986 85 91						STA REGX
+   201 0988 BC A2 16		DRAW_T			LDY SCR1_OBJ_T,X
+   202 098B 20 68 0A						JSR DRAW_SPRITE
+   203 098E A2 00		NEXT			LDX #0
+   204 0990 CA							DEX
+   205 0991 10 E8						BPL	LOOP
+   206 0993 60						RTS
+   207 				.ENDL
+   208
+   209 0994			.LOCAL	MOVE_SPRITES
+   210 0994 AE CB 08		MOVE_CNT	LDX TMP_CNT
+   211 0997 8E 7A 09					STX	DRAW_SPRITES.DRAW_CNT +1
+   212 099A 8E 61 09					STX CLEAR_SPRITES.CLEAR_CNT +1
+   213 099D BD E8 08		LOOP			LDA TMPV,X
+   214 09A0 9D 02 16		MOVE_V			STA SCR0_OBJ_V,X
+   215 09A3 BD CC 08						LDA TMPH,X
+   216 09A6 9D 22 16		MOVE_H			STA SCR0_OBJ_H,X
+   217 09A9 BD 04 09						LDA TMPT,X
+   218 09AC 9D 42 16		MOVE_T			STA SCR0_OBJ_T,X
+   219 09AF CA							DEX
+   220 09B0 10 EB						BPL	LOOP
+   221 09B2 60						RTS
+   222 				.ENDL
+   223
+   224 09B3			.LOCAL	SWAP_SCREEN
+   225 09B3 A9 20					LDA #>SCN0_T			; has screen0 just been displayed
+   226 09B5 CD 05 0E					CMP DLI_SCN_T_ADDR +2
+   227 09B8 F0 3A					BEQ SCN0_SCN1			; yes
+   228
+   229 09BA A9 20		SCN1_SCN0	LDA	#>SCN0_T			; no - so now show screen0
+   230 09BC 8D 05 0E					STA	DLI_SCN_T_ADDR +2
+   231 09BF A9 30					LDA	#>SCN0_B
+   232 09C1 8D 87 0E					STA	DLI_SCN_B_ADDR +2
+   233 09C4 A9 10					LDA	#>SC1_HI			; and clear and draw on screen1
+   234 09C6 8D CE 0A					STA	CLEAR_01.SCPTC1 +2
+   235 09C9 8D 35 0C					STA	CLEAR_08.SCPTC8 +2
+   236 09CC 8D B9 0A					STA	DRAW_01.SCPTD1 +2
+   237 09CF 8D 4F 0B					STA	DRAW_08.SCPTD8 +2
+   238
+   239 09D2 A2 22					LDX	#<SCR0_OBJ_H
+   240 09D4 A0 02					LDY	#<SCR0_OBJ_V
+   241 09D6 A9 42					LDA #<SCR0_OBJ_T
+   242 09D8 8E 66 09					STX CLEAR_SPRITES.CLEAR_H +1
+   243 09DB 8C 6B 09					STY CLEAR_SPRITES.CLEAR_V +1
+   244 09DE 8D 6E 09					STA CLEAR_SPRITES.CLEAR_T +1
+   245 09E1 8E 84 09					STX DRAW_SPRITES.DRAW_H +1
+   246 09E4 8C 7F 09					STY DRAW_SPRITES.DRAW_V +1
+   247 09E7 8D 89 09					STA DRAW_SPRITES.DRAW_T +1
+   248 09EA 8E A7 09					STX MOVE_SPRITES.MOVE_H +1
+   249 09ED 8C A1 09					STY MOVE_SPRITES.MOVE_V +1
+   250 09F0 8D AD 09					STA MOVE_SPRITES.MOVE_T +1
+   251 09F3 60						RTS
+   252
+   253 09F4 A9 40		SCN0_SCN1	LDA	#>SCN1_T			; so now show screen1 
+   254 09F6 8D 05 0E					STA	DLI_SCN_T_ADDR +2
+   255 09F9 A9 50					LDA	#>SCN1_B
+   256 09FB 8D 87 0E					STA	DLI_SCN_B_ADDR +2
+   257 09FE A9 0F					LDA	#>SC0_HI			; and clear and draw on screen0
+   258 0A00 8D CE 0A					STA	CLEAR_01.SCPTC1 +2
+   259 0A03 8D 35 0C					STA	CLEAR_08.SCPTC8 +2
+   260 0A06 8D B9 0A					STA	DRAW_01.SCPTD1 +2
+   261 0A09 8D 4F 0B					STA	DRAW_08.SCPTD8 +2
+   262
+   263 0A0C A2 82					LDX	#<SCR1_OBJ_H
+   264 0A0E A0 62					LDY	#<SCR1_OBJ_V
+   265 0A10 A9 A2					LDA #<SCR1_OBJ_T
+   266 0A12 8E 66 09					STX CLEAR_SPRITES.CLEAR_H +1
+   267 0A15 8C 6B 09					STY CLEAR_SPRITES.CLEAR_V +1
+   268 0A18 8D 6E 09					STA CLEAR_SPRITES.CLEAR_T +1
+   269 0A1B 8E 84 09					STX DRAW_SPRITES.DRAW_H +1
+   270 0A1E 8C 7F 09					STY DRAW_SPRITES.DRAW_V +1
+   271 0A21 8D 89 09					STA DRAW_SPRITES.DRAW_T +1
+   272 0A24 8E A7 09					STX MOVE_SPRITES.MOVE_H +1
+   273 0A27 8C A1 09					STY MOVE_SPRITES.MOVE_V +1
+   274 0A2A 8D AD 09					STA MOVE_SPRITES.MOVE_T +1
+   275 0A2D 60						RTS
+   276 				.ENDL	
+   277
+   278 0A2E			.LOCAL	DLI
+   279 0A2E 08						PHP
+   280 0A2F 8D 61 0A					STA INTREGA +1
+   281 0A32 8E 63 0A					STX INTREGX +1
+   282 0A35 8C 65 0A					STY INTREGY +1
+   283
+   284 0A38						BORDER $28			
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 0A38 A9 28					LDA #$28
+     2 0A3A 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   285 0A3D 20 B3 09					JSR	SWAP_SCREEN ; also swap this and previous list
+   286 								
+   287 				; 			BORDER $7A
+   288 0A40 20 60 09					JSR	CLEAR_SPRITES ; clear previous list
+   289
+   290 				;			BORDER $20
+   291 0A43 20 D8 0C					JSR	JOYSTICK
+   292
+   293 0A46 20 94 09					JSR	MOVE_SPRITES ; move objects to this draw list
+   294 0A49 A6 97				ldx TH
+   295 0A4B A4 96				ldy TV
+   296 0A4D A9 00				lda	#0
+   297 0A4F 8E CC 08				stx TMPH
+   298 0A52 8C E8 08				sty TMPV
+   299 0A55 8D 04 09				sta TMPT
+   300 						
+   301 				;		BORDER $44
+   302
+   303 0A58 20 79 09					JSR	DRAW_SPRITES ; draw this list 
+   304
+   305 0A5B						BORDER 0
+Macro: BORDER [Source: robotron_32col_v15.asm]
+     1 0A5B A9 00					LDA #0
+     2 0A5D 8D 1A D0					STA COLBK
+Source: robotron_32col_v15.asm
+   306
+   307 0A60 A9 00		INTREGA	LDA #0
+   308 0A62 A2 00		INTREGX	LDX #0
+   309 0A64 A0 00		INTREGY	LDY #0
+   310 0A66 28						PLP
+   311 0A67 40					RTI
+   312 				.ENDL
+   313
+   314 0A68			.LOCAL	DRAW_SPRITE
+   315 0A68 BE 90 14					LDX SPRITE_AND_LO_LO,Y
+   316 0A6B 86 80					STX SCR0
+   317 0A6D BE 91 14					LDX SPRITE_AND_LO_HI,Y
+   318 0A70 86 81					STX SCR0 +1
+   319 0A72 BE 92 14					LDX SPRITE_AND_HI_LO,Y
+   320 0A75 86 82					STX SCR1
+   321 0A77 BE 93 14					LDX SPRITE_AND_HI_HI,Y
+   322 0A7A 86 83					STX SCR1 +1
+   323 				  
+   324 0A7C BE 94 14					LDX SPRITE_ORA_LO_LO,Y
+   325 0A7F 86 84					STX SCR2
+   326 0A81 BE 95 14					LDX SPRITE_ORA_LO_HI,Y
+   327 0A84 86 85					STX SCR2 +1
+   328 0A86 BE 96 14					LDX SPRITE_ORA_HI_LO,Y
+   329 0A89 86 86					STX SCR3
+   330 0A8B BE 97 14					LDX SPRITE_ORA_HI_HI,Y
+   331 0A8E 86 87					STX SCR3 +1
+   332
+   333 0A90 BE 98 14					LDX SPRITE_TYPE,Y
+   334 0A93 8E A6 0A					STX SPRN_TMPB+1
+   335
+   336 0A96 29 03					AND #3
+   337 0A98 A8						TAY
+   338
+   339 0A99 B1 84					LDA (SCR2),Y
+   340 0A9B 85 9B		            STA SPR_ORA
+   341 0A9D B1 86					LDA (SCR3),Y
+   342 0A9F 85 9C		            STA SPR_ORA +1
+   343 0AA1 B3 80					LAX (SCR0),Y
+   344 0AA3 B1 82					LDA (SCR1),Y
+   345 				   
+   346 0AA5 6C 00 16		SPRN_TMPB	JMP (SPRITE_DRW_JMP_LIST)
+   347 				.ENDL
+   348
+   349 0AA8			.LOCAL	CLEAR_SPRITE
+   350 0AA8 BE 98 14		  			LDX SPRITE_TYPE,Y
+   351 0AAB 8E B0 0A		 			STX SPRN_TMPB+1
+   352 0AAE A8						TAY
+   353 0AAF 6C 00 17		SPRN_TMPB	JMP (SPRITE_CLR_JMP_LIST)
+   354 				.ENDL
+   355
+   356 0AB2			.LOCAL	DRAW_01
+   357 0AB2 B9 00 11				LDA	SC_LO,Y
+   358 0AB5 85 80				STA	SCR0
+   359 0AB7 B9 00 0F		SCPTD1	LDA	SC0_HI,Y 
+   360 0ABA 85 81				STA	SCR0+1 
+   361 0ABC BC 00 12				LDY	SCR_HOR,X
+   362 0ABF B1 80				LDA	(SCR0),Y
+   363 0AC1 1D 80 12				ORA	SCR_OR,X
+   364 0AC4 91 80				STA	(SCR0),Y 
+   365 0AC6 60					RTS
+   366 				.ENDL
+   367
+   368 0AC7			.LOCAL	CLEAR_01
+   369 0AC7 B9 00 11				LDA	SC_LO,Y
+   370 0ACA 85 80				STA	SCR0
+   371 0ACC B9 00 0F		SCPTC1	LDA	SC0_HI,Y 
+   372 0ACF 85 81				STA	SCR0+1 
+   373 0AD1 BC 00 12				LDY	SCR_HOR,X
+   374 0AD4 A9 00				LDA	#0
+   375 0AD6 91 80				STA	(SCR0),Y 
+   376 0AD8 60					RTS
+   377 				.ENDL
+   378
+   379 				.MACRO	INCXY
+   380 							INX
+   381 							BNE CONT
+   382 								INY
+   383 				CONT
+   384 				.ENDM
+   385
+   386 				.MACRO	ADDAX
+   387 							ADC #32
+   388 							BCC	CONT
+   389 								INX
+   390 								CLC
+   391 				CONT
+   392 				.ENDM
+   393
+   394 				.MACRO	ADDAX_NOC
+   395 							ADC #32
+   396 							BCC	CONT
+   397 								INX
+   398 				;				CLC not needed
+   399 				CONT
+   400 				.ENDM
+   401
+   402 				.MACRO	ADDAY
+   403 							ADC #32
+   404 							BCC	CONT
+   405 								INY
+   406 								CLC
+   407 				CONT
+   408 				.ENDM
+   409
+   410 				.MACRO	ADDAY_NOC
+   411 							ADC #32
+   412 							BCC	CONT
+   413 								INY
+   414 				;				CLC not needed
+   415 				CONT
+   416 				.ENDM
+   417
+   418 0AD9			.LOCAL	DRAW_08
+   419 0AD9 8E 24 0C					STX SPA01 +1
+   420 0ADC 8D 25 0C					STA SPA01 +2
+   421 0ADF E8						INX
+   422 0AE0 8E 1A 0C					STX SPA02 +1
+   423 0AE3 8D 1B 0C					STA SPA02 +2
+   424 0AE6 E8						INX 
+   425 0AE7 8E 10 0C					STX SPA03 +1
+   426 0AEA 8D 11 0C					STA SPA03 +2
+   427 0AED E8						INX 
+   428 0AEE 8E 06 0C					STX SPA04 +1
+   429 0AF1 8D 07 0C					STA SPA04 +2
+   430 0AF4 E8						INX 
+   431 0AF5 8E FC 0B					STX SPA05 +1
+   432 0AF8 8D FD 0B					STA SPA05 +2
+   433 0AFB E8						INX 
+   434 0AFC 8E F2 0B					STX SPA06 +1
+   435 0AFF 8D F3 0B					STA SPA06 +2
+   436 0B02 E8						INX 
+   437 0B03 8E E8 0B					STX SPA07 +1
+   438 0B06 8D E9 0B					STA SPA07 +2
+   439 0B09 E8						INX 
+   440 0B0A 8E DE 0B					STX SPA08 +1
+   441 0B0D 8D DF 0B					STA SPA08 +2
+   442
+   443 0B10 A6 9B					LDX SPR_ORA
+   444 0B12 A5 9C					LDA SPR_ORA +1
+   445 0B14 8E 27 0C					STX SPO01 +1
+   446 0B17 8D 28 0C					STA SPO01 +2
+   447 0B1A E8						INX 
+   448 0B1B 8E 1D 0C					STX SPO02 +1
+   449 0B1E 8D 1E 0C					STA SPO02 +2
+   450 0B21 E8						INX 
+   451 0B22 8E 13 0C					STX SPO03 +1
+   452 0B25 8D 14 0C					STA SPO03 +2
+   453 0B28 E8						INX 
+   454 0B29 8E 09 0C					STX SPO04 +1
+   455 0B2C 8D 0A 0C					STA SPO04 +2
+   456 0B2F E8						INX 
+   457 0B30 8E FF 0B					STX SPO05 +1
+   458 0B33 8D 00 0C					STA SPO05 +2
+   459 0B36 E8						INX 
+   460 0B37 8E F5 0B					STX SPO06 +1
+   461 0B3A 8D F6 0B					STA SPO06 +2
+   462 0B3D E8						INX 
+   463 0B3E 8E EB 0B					STX SPO07 +1
+   464 0B41 8D EC 0B					STA SPO07 +2
+   465 0B44 E8						INX 
+   466 0B45 8E E1 0B					STX SPO08 +1
+   467 0B48 8D E2 0B					STA SPO08 +2
+   468 				 
+   469 0B4B A7 92					LAX REGY ; V
+   470 0B4D BC 00 0F		SCPTD8		LDY SC0_HI +0,X
+   471 0B50 84 81					STY SCR0 +1
+   472 							
+   473 0B52 4A						LSR
+   474 0B53 B0 3E					BCS	ODD_12221
+   475
+   476 0B55 BD 00 11		EVEN_2222:	LDA SC_LO +0,X
+   477 0B58 85 80					STA SCR0
+   478
+   479 0B5A 18						CLC			
+   480 0B5B 69 20					ADC	#32
+   481 0B5D 84 83					STY SCR1 +1
+   482 0B5F 85 82					STA SCR1
+   483
+   484 0B61						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0B61 69 20					ADC #32
+     2 0B63 90 02					BCC	CONT
+     3 0B65 C8							INY
+     4 0B66 18							CLC
+     5 0B67			CONT
+Source: robotron_32col_v15.asm
+   485 0B67 84 85					STY SCR2 +1
+   486 0B69 85 84					STA SCR2
+   487 0B6B 69 20					ADC	#32
+   488 0B6D 84 87					STY SCR3 +1
+   489 0B6F 85 86					STA SCR3
+   490
+   491 0B71						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0B71 69 20					ADC #32
+     2 0B73 90 02					BCC	CONT
+     3 0B75 C8							INY
+     4 0B76 18							CLC
+     5 0B77			CONT
+Source: robotron_32col_v15.asm
+   492 0B77 84 89					STY SCR4 +1
+   493 0B79 85 88					STA SCR4
+   494 0B7B 69 20					ADC	#32
+   495 0B7D 84 8B					STY SCR5 +1
+   496 0B7F 85 8A					STA SCR5
+   497 							
+   498 0B81						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0B81 69 20					ADC #32
+     2 0B83 90 02					BCC	CONT
+     3 0B85 C8							INY
+     4 0B86 18							CLC
+     5 0B87			CONT
+Source: robotron_32col_v15.asm
+   499 0B87 84 8D					STY SCR6 +1
+   500 0B89 85 8C					STA SCR6
+   501 0B8B 69 20					ADC	#32
+   502 0B8D 84 8F					STY SCR7 +1
+   503 0B8F 85 8E					STA SCR7
+   504
+   505 0B91 50 3F					BVC	CONT ; JMP
+   506
+   507 0B93 BD 00 11		ODD_12221:	LDA SC_LO +0,X
+   508 0B96 85 80					STA SCR0
+   509
+   510 0B98 18						CLC			
+   511 0B99						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0B99 69 20					ADC #32
+     2 0B9B 90 02					BCC	CONT
+     3 0B9D C8							INY
+     4 0B9E 18							CLC
+     5 0B9F			CONT
+Source: robotron_32col_v15.asm
+   512 0B9F 84 83					STY SCR1 +1
+   513 0BA1 85 82					STA SCR1
+   514
+   515 0BA3 69 20					ADC	#32
+   516 0BA5 84 85					STY SCR2 +1
+   517 0BA7 85 84					STA SCR2
+   518 0BA9						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0BA9 69 20					ADC #32
+     2 0BAB 90 02					BCC	CONT
+     3 0BAD C8							INY
+     4 0BAE 18							CLC
+     5 0BAF			CONT
+Source: robotron_32col_v15.asm
+   519 0BAF 84 87					STY SCR3 +1
+   520 0BB1 85 86					STA SCR3
+   521
+   522 0BB3 69 20					ADC	#32
+   523 0BB5 84 89					STY SCR4 +1
+   524 0BB7 85 88					STA SCR4
+   525
+   526 0BB9						ADDAY
+Macro: ADDAY [Source: robotron_32col_v15.asm]
+     1 0BB9 69 20					ADC #32
+     2 0BBB 90 02					BCC	CONT
+     3 0BBD C8							INY
+     4 0BBE 18							CLC
+     5 0BBF			CONT
+Source: robotron_32col_v15.asm
+   527 0BBF 84 8B					STY SCR5 +1
+   528 0BC1 85 8A					STA SCR5
+   529 							
+   530 0BC3 69 20					ADC	#32
+   531 0BC5 84 8D					STY SCR6 +1
+   532 0BC7 85 8C					STA SCR6
+   533
+   534 0BC9						ADDAY_NOC
+Macro: ADDAY_NOC [Source: robotron_32col_v15.asm]
+     1 0BC9 69 20					ADC #32
+     2 0BCB 90 01					BCC	CONT
+     3 0BCD C8							INY
+     5 0BCE			CONT
+Source: robotron_32col_v15.asm
+   535 0BCE 84 8F					STY SCR7 +1
+   536 0BD0 85 8E					STA SCR7
+   537 							
+   538 0BD2 A6 91		CONT:		LDX REGX
+   539 0BD4 BC 00 12					LDY SCR_HOR,X
+   540 							
+   541 0BD7 BD 80 13					LDA	SPR08_DRW_CNT,X
+   542 0BDA AA						TAX
+   543 							
+   544 0BDB			LOOP
+   545 0BDB B1 8E						LDA	(SCR7),Y
+   546 0BDD 3D CD AB		SPA08 			AND $ABCD,X
+   547 0BE0 1D CD AB		SPO08 			ORA $ABCD,X
+   548 0BE3 91 8E						STA	(SCR7),Y
+   549
+   550 0BE5 B1 8C						LDA	(SCR6),Y
+   551 0BE7 3D CD AB		SPA07 			AND $ABCD,X
+   552 0BEA 1D CD AB		SPO07 			ORA $ABCD,X
+   553 0BED 91 8C						STA	(SCR6),Y
+   554
+   555 0BEF B1 8A						LDA	(SCR5),Y
+   556 0BF1 3D CD AB		SPA06 			AND $ABCD,X
+   557 0BF4 1D CD AB		SPO06 			ORA $ABCD,X
+   558 0BF7 91 8A						STA	(SCR5),Y
+   559
+   560 0BF9 B1 88						LDA	(SCR4),Y
+   561 0BFB 3D CD AB		SPA05 			AND $ABCD,X
+   562 0BFE 1D CD AB		SPO05 			ORA $ABCD,X
+   563 0C01 91 88						STA	(SCR4),Y
+   564
+   565 0C03 B1 86						LDA	(SCR3),Y
+   566 0C05 3D CD AB		SPA04 			AND $ABCD,X
+   567 0C08 1D CD AB		SPO04 			ORA $ABCD,X
+   568 0C0B 91 86						STA	(SCR3),Y
+   569
+   570 0C0D B1 84						LDA	(SCR2),Y
+   571 0C0F 3D CD AB		SPA03 			AND $ABCD,X
+   572 0C12 1D CD AB		SPO03 			ORA $ABCD,X
+   573 0C15 91 84						STA	(SCR2),Y
+   574
+   575 0C17 B1 82						LDA	(SCR1),Y
+   576 0C19 3D CD AB		SPA02 			AND $ABCD,X
+   577 0C1C 1D CD AB		SPO02 			ORA $ABCD,X
+   578 0C1F 91 82						STA	(SCR1),Y
+   579
+   580 0C21 B1 80						LDA	(SCR0),Y
+   581 0C23 3D CD AB		SPA01 			AND $ABCD,X
+   582 0C26 1D CD AB		SPO01 			ORA $ABCD,X
+   583 0C29 91 80						STA	(SCR0),Y
+   584
+   585 0C2B C8							INY
+   586 								
+   587 0C2C A9 FF						LDA #$FF
+   588 0C2E CB 08						SBX #8 ; = x=x-8 ; #$fc ;equivalent to +4
+   589 				;				TXA
+   590 				;				SBC #8		; carry set
+   591 				;				TAX
+   592
+   593 0C30 D0 A9					BNE LOOP
+   594 0C32 60					RTS
+   595 				.ENDL
+   596
+   597 0C33			.LOCAL	CLEAR_08
+   598 0C33 BE 00 0F		SCPTC8		LDX SC0_HI +0,Y
+   599 0C36 86 81					STX SCR0 +1
+   600
+   601 0C38 4A						LSR
+   602 0C39 B0 3E					BCS	ODD_12221
+   603
+   604 0C3B B9 00 11		EVEN_2222:	LDA SC_LO +0,Y
+   605 0C3E 85 80					STA SCR0
+   606 0C40 18						CLC			
+   607 0C41 69 20					ADC	#32
+   608 0C43 86 83					STX SCR1 +1
+   609 0C45 85 82					STA SCR1
+   610
+   611 0C47						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C47 69 20					ADC #32
+     2 0C49 90 02					BCC	CONT
+     3 0C4B E8							INX
+     4 0C4C 18							CLC
+     5 0C4D			CONT
+Source: robotron_32col_v15.asm
+   612 0C4D 86 85					STX SCR2 +1
+   613 0C4F 85 84					STA SCR2
+   614 0C51 69 20					ADC	#32
+   615 0C53 86 87					STX SCR3 +1
+   616 0C55 85 86					STA SCR3
+   617
+   618 0C57						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C57 69 20					ADC #32
+     2 0C59 90 02					BCC	CONT
+     3 0C5B E8							INX
+     4 0C5C 18							CLC
+     5 0C5D			CONT
+Source: robotron_32col_v15.asm
+   619 0C5D 86 89					STX SCR4 +1
+   620 0C5F 85 88					STA SCR4
+   621 0C61 69 20					ADC	#32
+   622 0C63 86 8B					STX SCR5 +1
+   623 0C65 85 8A					STA SCR5
+   624 							
+   625 0C67						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C67 69 20					ADC #32
+     2 0C69 90 02					BCC	CONT
+     3 0C6B E8							INX
+     4 0C6C 18							CLC
+     5 0C6D			CONT
+Source: robotron_32col_v15.asm
+   626 0C6D 86 8D					STX SCR6 +1
+   627 0C6F 85 8C					STA SCR6
+   628 0C71 69 20					ADC	#32
+   629 0C73 86 8F					STX SCR7 +1
+   630 0C75 85 8E					STA SCR7
+   631
+   632 0C77 50 3F					BVC	CONT ; JMP
+   633
+   634 0C79 B9 00 11		ODD_12221:	LDA SC_LO +0,Y
+   635 0C7C 85 80					STA SCR0
+   636
+   637 0C7E 18						CLC			
+   638 0C7F						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C7F 69 20					ADC #32
+     2 0C81 90 02					BCC	CONT
+     3 0C83 E8							INX
+     4 0C84 18							CLC
+     5 0C85			CONT
+Source: robotron_32col_v15.asm
+   639 0C85 86 83					STX SCR1 +1
+   640 0C87 85 82					STA SCR1
+   641
+   642 0C89 69 20					ADC	#32
+   643 0C8B 86 85					STX SCR2 +1
+   644 0C8D 85 84					STA SCR2
+   645 0C8F						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C8F 69 20					ADC #32
+     2 0C91 90 02					BCC	CONT
+     3 0C93 E8							INX
+     4 0C94 18							CLC
+     5 0C95			CONT
+Source: robotron_32col_v15.asm
+   646 0C95 86 87					STX SCR3 +1
+   647 0C97 85 86					STA SCR3
+   648
+   649 0C99 69 20					ADC	#32
+   650 0C9B 86 89					STX SCR4 +1
+   651 0C9D 85 88					STA SCR4
+   652
+   653 0C9F						ADDAX
+Macro: ADDAX [Source: robotron_32col_v15.asm]
+     1 0C9F 69 20					ADC #32
+     2 0CA1 90 02					BCC	CONT
+     3 0CA3 E8							INX
+     4 0CA4 18							CLC
+     5 0CA5			CONT
+Source: robotron_32col_v15.asm
+   654 0CA5 86 8B					STX SCR5 +1
+   655 0CA7 85 8A					STA SCR5
+   656 							
+   657 0CA9 69 20					ADC	#32
+   658 0CAB 86 8D					STX SCR6 +1
+   659 0CAD 85 8C					STA SCR6
+   660
+   661 0CAF						ADDAX_NOC
+Macro: ADDAX_NOC [Source: robotron_32col_v15.asm]
+     1 0CAF 69 20					ADC #32
+     2 0CB1 90 01					BCC	CONT
+     3 0CB3 E8							INX
+     5 0CB4			CONT
+Source: robotron_32col_v15.asm
+   662 0CB4 86 8F					STX SCR7 +1
+   663 0CB6 85 8E					STA SCR7
+   664 							
+   665 0CB8 A6 91		CONT:		LDX REGX
+   666 0CBA BC 00 12					LDY SCR_HOR,X
+   667 0CBD BD 00 14					LDA	SPR08_CLR_CNT,X
+   668 0CC0 AA						TAX
+   669
+   670 0CC1 A9 00					LDA	#0
+   671 0CC3 91 80		LOOP			STA	(SCR0),Y
+   672 0CC5 91 82						STA	(SCR1),Y
+   673 0CC7 91 84						STA	(SCR2),Y
+   674 0CC9 91 86						STA	(SCR3),Y
+   675 0CCB 91 88						STA	(SCR4),Y
+   676 0CCD 91 8A						STA	(SCR5),Y
+   677 0CCF 91 8C						STA	(SCR6),Y
+   678 0CD1 91 8E						STA	(SCR7),Y
+   679 0CD3 C8							INY
+   680 0CD4 CA							DEX
+   681 0CD5 D0 EC					BNE LOOP
+   682 0CD7 60					RTS
+   683 				.ENDL
+   684
+   685 				;.LOCAL	V_WAIT
+   686 				;			LDA	#111
+   687 				;LOOP			CMP	VCOUNT  ; will be equal until incremented in VB
+   688 				;				BNE	LOOP
+   689 				;			RTS
+   690 				;.ENDL
+   691
+   692 0CD8			.LOCAL	JOYSTICK
+   693 0CD8 AD 00 D3					LDA PORTA
+   694 0CDB 4A						LSR
+   695 0CDC B0 02					BCS   UP
+   696 0CDE C6 96						DEC   TV
+   697 0CE0 4A			UP       	LSR
+   698 0CE1 B0 02					BCS   DOWN
+   699 0CE3 E6 96						INC   TV
+   700 0CE5 4A			DOWN     	LSR
+   701 0CE6 B0 02					BCS   LEFT
+   702 0CE8 C6 97						DEC   TH
+   703 0CEA 4A			LEFT     	LSR
+   704 0CEB B0 02					BCS   RIGHT
+   705 0CED E6 97						INC   TH
+   706 0CEF 29 01		RIGHT    	AND   #1
+   707 0CF1 85 98					STA   FIRE
+   708 0CF3 60						RTS
+   709 				.ENDL
+   710
+   711 0CF4 00			MOVE_TEMP .BYTE 0
+   712
+   713 0CF5			.LOCAL	MOVE_HV
+   714 				; RTS
+   715 0CF5 AC CB 08					LDY TMP_CNT
+   716 0CF8			LOOP
+   717 				;	BORDER $BA
+   718 0CF8 BF CC 08					LAX TMPH,Y
+   719 0CFB 18							CLC
+   720 0CFC 79 24 09						ADC TMPMH,Y
+   721 0CFF C9 77						CMP #128-9
+   722 0D01 90 0B						BCC CONT_H
+   723 0D03 B9 24 09							LDA	TMPMH,Y
+   724 0D06 49 FF							EOR	#255
+   725 0D08 69 00							ADC	#0
+   726 0D0A 99 24 09							STA	TMPMH,Y
+   727 0D0D 8A								TXA
+   728 0D0E 99 CC 08		CONT_H			STA TMPH,Y
+   729 0D11 BF E8 08						LAX TMPV,Y
+   730 0D14 18							CLC
+   731 0D15 79 42 09						ADC TMPMV,Y
+   732 0D18 C9 B7						CMP #192-9
+   733 0D1A 90 0B						BCC CONT_V
+   734 0D1C B9 42 09							LDA	TMPMV,Y
+   735 0D1F 49 FF							EOR	#255
+   736 0D21 69 00							ADC	#0
+   737 0D23 99 42 09							STA	TMPMV,Y
+   738 0D26 8A								TXA
+   739 0D27 99 E8 08		CONT_V			STA TMPV,Y
+   740 				;		BORDER 0
+   741 0D2A 88							DEY
+   742 0D2B D0 CB						BNE	LOOP
+   743 0D2D 60						RTS
+   744 				.ENDL
+   745
+   746 0D2E			.LOCAL	MEMSET
+   747 0D2E 8C 42 0D					STY	LSB_ONLY+1 ; store LSB count
+   748 0D31 E0 00					CPX	#0          ; MSB?     
+   749 0D33 F0 0C		            BEQ	LSB_ONLY   ; no
+   750
+   751 0D35 A0 00		            LDY	#0          ; yes so reset LSB
+   752 0D37			MSB_LOOP  
+   753 0D37 91 80		LSB_LOOP    		STA	(SCR0),Y   ; clear whole MSB
+   754 0D39 88								DEY 
+   755 0D3A D0 FB							BNE	LSB_LOOP
+   756
+   757 0D3C E6 81						INC	SCR0+1      ; inc MSB
+   758 0D3E CA							DEX               ; dec MSB count
+   759 0D3F D0 F6						BNE	MSB_LOOP
+   760
+   761 0D41 A0 00		LSB_ONLY    LDY	#0          ; LSB count 
+   762 0D43 F0 07		            BEQ	MS_END     ; not needed
+   763
+   764 0D45 91 80		LAST_LSB_LOOP 	STA	(SCR0),Y
+   765 0D47 88							DEY 
+   766 0D48 D0 FB						BNE	LAST_LSB_LOOP
+   767 				                
+   768 0D4A 91 80		            STA	(SCR0),Y     ; clear last Y (0)
+   769 0D4C 60			MS_END      RTS
+   770 				.ENDL
+   771 					
+   772 0D4D				.ALIGN $100
+   773
+   774 				; every 64 lines add 3k
+   775 0E00			DISPLAY_LIST		
+   776 0E00-0ECA> 70 70 70		.BYTE BLANK_LINE,BLANK_LINE,BLANK_LINE	; Discard 24 scan lines
+   777 0E03			DLI_SCN_T_ADDR
+   778 0E03 4E 00 20			.BYTE SCREEN_ADR+SM,<SCN0_T,>SCN0_T
+   779 				.REPT	128-1
+   780 					.BYTE SM
+   781 				.ENDR
+   781 				.ENDR
+Source: REPT
+   780 0E06 0E				.BYTE SM
+   780 0E07 0E				.BYTE SM
+   780 0E08 0E				.BYTE SM
+   780 0E09 0E				.BYTE SM
+   780 0E0A 0E				.BYTE SM
+   780 0E0B 0E				.BYTE SM
+   780 0E0C 0E				.BYTE SM
+   780 0E0D 0E				.BYTE SM
+   780 0E0E 0E				.BYTE SM
+   780 0E0F 0E				.BYTE SM
+   780 0E10 0E				.BYTE SM
+   780 0E11 0E				.BYTE SM
+   780 0E12 0E				.BYTE SM
+   780 0E13 0E				.BYTE SM
+   780 0E14 0E				.BYTE SM
+   780 0E15 0E				.BYTE SM
+   780 0E16 0E				.BYTE SM
+   780 0E17 0E				.BYTE SM
+   780 0E18 0E				.BYTE SM
+   780 0E19 0E				.BYTE SM
+   780 0E1A 0E				.BYTE SM
+   780 0E1B 0E				.BYTE SM
+   780 0E1C 0E				.BYTE SM
+   780 0E1D 0E				.BYTE SM
+   780 0E1E 0E				.BYTE SM
+   780 0E1F 0E				.BYTE SM
+   780 0E20 0E				.BYTE SM
+   780 0E21 0E				.BYTE SM
+   780 0E22 0E				.BYTE SM
+   780 0E23 0E				.BYTE SM
+   780 0E24 0E				.BYTE SM
+   780 0E25 0E				.BYTE SM
+   780 0E26 0E				.BYTE SM
+   780 0E27 0E				.BYTE SM
+   780 0E28 0E				.BYTE SM
+   780 0E29 0E				.BYTE SM
+   780 0E2A 0E				.BYTE SM
+   780 0E2B 0E				.BYTE SM
+   780 0E2C 0E				.BYTE SM
+   780 0E2D 0E				.BYTE SM
+   780 0E2E 0E				.BYTE SM
+   780 0E2F 0E				.BYTE SM
+   780 0E30 0E				.BYTE SM
+   780 0E31 0E				.BYTE SM
+   780 0E32 0E				.BYTE SM
+   780 0E33 0E				.BYTE SM
+   780 0E34 0E				.BYTE SM
+   780 0E35 0E				.BYTE SM
+   780 0E36 0E				.BYTE SM
+   780 0E37 0E				.BYTE SM
+   780 0E38 0E				.BYTE SM
+   780 0E39 0E				.BYTE SM
+   780 0E3A 0E				.BYTE SM
+   780 0E3B 0E				.BYTE SM
+   780 0E3C 0E				.BYTE SM
+   780 0E3D 0E				.BYTE SM
+   780 0E3E 0E				.BYTE SM
+   780 0E3F 0E				.BYTE SM
+   780 0E40 0E				.BYTE SM
+   780 0E41 0E				.BYTE SM
+   780 0E42 0E				.BYTE SM
+   780 0E43 0E				.BYTE SM
+   780 0E44 0E				.BYTE SM
+   780 0E45 0E				.BYTE SM
+   780 0E46 0E				.BYTE SM
+   780 0E47 0E				.BYTE SM
+   780 0E48 0E				.BYTE SM
+   780 0E49 0E				.BYTE SM
+   780 0E4A 0E				.BYTE SM
+   780 0E4B 0E				.BYTE SM
+   780 0E4C 0E				.BYTE SM
+   780 0E4D 0E				.BYTE SM
+   780 0E4E 0E				.BYTE SM
+   780 0E4F 0E				.BYTE SM
+   780 0E50 0E				.BYTE SM
+   780 0E51 0E				.BYTE SM
+   780 0E52 0E				.BYTE SM
+   780 0E53 0E				.BYTE SM
+   780 0E54 0E				.BYTE SM
+   780 0E55 0E				.BYTE SM
+   780 0E56 0E				.BYTE SM
+   780 0E57 0E				.BYTE SM
+   780 0E58 0E				.BYTE SM
+   780 0E59 0E				.BYTE SM
+   780 0E5A 0E				.BYTE SM
+   780 0E5B 0E				.BYTE SM
+   780 0E5C 0E				.BYTE SM
+   780 0E5D 0E				.BYTE SM
+   780 0E5E 0E				.BYTE SM
+   780 0E5F 0E				.BYTE SM
+   780 0E60 0E				.BYTE SM
+   780 0E61 0E				.BYTE SM
+   780 0E62 0E				.BYTE SM
+   780 0E63 0E				.BYTE SM
+   780 0E64 0E				.BYTE SM
+   780 0E65 0E				.BYTE SM
+   780 0E66 0E				.BYTE SM
+   780 0E67 0E				.BYTE SM
+   780 0E68 0E				.BYTE SM
+   780 0E69 0E				.BYTE SM
+   780 0E6A 0E				.BYTE SM
+   780 0E6B 0E				.BYTE SM
+   780 0E6C 0E				.BYTE SM
+   780 0E6D 0E				.BYTE SM
+   780 0E6E 0E				.BYTE SM
+   780 0E6F 0E				.BYTE SM
+   780 0E70 0E				.BYTE SM
+   780 0E71 0E				.BYTE SM
+   780 0E72 0E				.BYTE SM
+   780 0E73 0E				.BYTE SM
+   780 0E74 0E				.BYTE SM
+   780 0E75 0E				.BYTE SM
+   780 0E76 0E				.BYTE SM
+   780 0E77 0E				.BYTE SM
+   780 0E78 0E				.BYTE SM
+   780 0E79 0E				.BYTE SM
+   780 0E7A 0E				.BYTE SM
+   780 0E7B 0E				.BYTE SM
+   780 0E7C 0E				.BYTE SM
+   780 0E7D 0E				.BYTE SM
+   780 0E7E 0E				.BYTE SM
+   780 0E7F 0E				.BYTE SM
+   780 0E80 0E				.BYTE SM
+   780 0E81 0E				.BYTE SM
+   780 0E82 0E				.BYTE SM
+   780 0E83 0E				.BYTE SM
+   780 0E84 0E				.BYTE SM
+Source: robotron_32col_v15.asm
+   782 0E85			DLI_SCN_B_ADDR
+   783 0E85 4E 00 30			.BYTE SCREEN_ADR+SM,<SCN0_B,>SCN0_B
+   784 				.REPT	64-1
+   785 					.BYTE SM
+   786 				.ENDR
+   786 				.ENDR
+Source: REPT
+   785 0E88 0E				.BYTE SM
+   785 0E89 0E				.BYTE SM
+   785 0E8A 0E				.BYTE SM
+   785 0E8B 0E				.BYTE SM
+   785 0E8C 0E				.BYTE SM
+   785 0E8D 0E				.BYTE SM
+   785 0E8E 0E				.BYTE SM
+   785 0E8F 0E				.BYTE SM
+   785 0E90 0E				.BYTE SM
+   785 0E91 0E				.BYTE SM
+   785 0E92 0E				.BYTE SM
+   785 0E93 0E				.BYTE SM
+   785 0E94 0E				.BYTE SM
+   785 0E95 0E				.BYTE SM
+   785 0E96 0E				.BYTE SM
+   785 0E97 0E				.BYTE SM
+   785 0E98 0E				.BYTE SM
+   785 0E99 0E				.BYTE SM
+   785 0E9A 0E				.BYTE SM
+   785 0E9B 0E				.BYTE SM
+   785 0E9C 0E				.BYTE SM
+   785 0E9D 0E				.BYTE SM
+   785 0E9E 0E				.BYTE SM
+   785 0E9F 0E				.BYTE SM
+   785 0EA0 0E				.BYTE SM
+   785 0EA1 0E				.BYTE SM
+   785 0EA2 0E				.BYTE SM
+   785 0EA3 0E				.BYTE SM
+   785 0EA4 0E				.BYTE SM
+   785 0EA5 0E				.BYTE SM
+   785 0EA6 0E				.BYTE SM
+   785 0EA7 0E				.BYTE SM
+   785 0EA8 0E				.BYTE SM
+   785 0EA9 0E				.BYTE SM
+   785 0EAA 0E				.BYTE SM
+   785 0EAB 0E				.BYTE SM
+   785 0EAC 0E				.BYTE SM
+   785 0EAD 0E				.BYTE SM
+   785 0EAE 0E				.BYTE SM
+   785 0EAF 0E				.BYTE SM
+   785 0EB0 0E				.BYTE SM
+   785 0EB1 0E				.BYTE SM
+   785 0EB2 0E				.BYTE SM
+   785 0EB3 0E				.BYTE SM
+   785 0EB4 0E				.BYTE SM
+   785 0EB5 0E				.BYTE SM
+   785 0EB6 0E				.BYTE SM
+   785 0EB7 0E				.BYTE SM
+   785 0EB8 0E				.BYTE SM
+   785 0EB9 0E				.BYTE SM
+   785 0EBA 0E				.BYTE SM
+   785 0EBB 0E				.BYTE SM
+   785 0EBC 0E				.BYTE SM
+   785 0EBD 0E				.BYTE SM
+   785 0EBE 0E				.BYTE SM
+   785 0EBF 0E				.BYTE SM
+   785 0EC0 0E				.BYTE SM
+   785 0EC1 0E				.BYTE SM
+   785 0EC2 0E				.BYTE SM
+   785 0EC3 0E				.BYTE SM
+   785 0EC4 0E				.BYTE SM
+   785 0EC5 0E				.BYTE SM
+   785 0EC6 0E				.BYTE SM
+Source: robotron_32col_v15.asm
+   787 0EC7 8E				.BYTE DLI_INT+SM
+   788 0EC8 41 00 0E			.BYTE DISP_LIST,<DISPLAY_LIST,>DISPLAY_LIST
+   789
+   790 0ECB				.ALIGN $100
+   791 0F00			SC0_HI	
+   792 0F00-0FBF> 20 20 20 20 + 	.BYTE >(SCN0_T+(000*SW)),>(SCN0_T+(001*SW)),>(SCN0_T+(002*SW)),>(SCN0_T+(003*SW)),>(SCN0_T+(004*SW)),>(SCN0_T+(005*SW)),>(SCN0_T+(006*SW)),>(SCN0_T+(007*SW)),>(SCN0_T+(008*SW)),>(SCN0_T+(009*SW))
+   793 0F0A 21 21 21 21 21 21 + 	.BYTE >(SCN0_T+(010*SW)),>(SCN0_T+(011*SW)),>(SCN0_T+(012*SW)),>(SCN0_T+(013*SW)),>(SCN0_T+(014*SW)),>(SCN0_T+(015*SW)),>(SCN0_T+(016*SW)),>(SCN0_T+(017*SW)),>(SCN0_T+(018*SW)),>(SCN0_T+(019*SW))
+   794 0F14 22 22 22 22 23 23 + 	.BYTE >(SCN0_T+(020*SW)),>(SCN0_T+(021*SW)),>(SCN0_T+(022*SW)),>(SCN0_T+(023*SW)),>(SCN0_T+(024*SW)),>(SCN0_T+(025*SW)),>(SCN0_T+(026*SW)),>(SCN0_T+(027*SW)),>(SCN0_T+(028*SW)),>(SCN0_T+(029*SW))
+   795 0F1E 23 23 24 24 24 24 + 	.BYTE >(SCN0_T+(030*SW)),>(SCN0_T+(031*SW)),>(SCN0_T+(032*SW)),>(SCN0_T+(033*SW)),>(SCN0_T+(034*SW)),>(SCN0_T+(035*SW)),>(SCN0_T+(036*SW)),>(SCN0_T+(037*SW)),>(SCN0_T+(038*SW)),>(SCN0_T+(039*SW))
+   796 0F28 25 25 25 25 25 25 + 	.BYTE >(SCN0_T+(040*SW)),>(SCN0_T+(041*SW)),>(SCN0_T+(042*SW)),>(SCN0_T+(043*SW)),>(SCN0_T+(044*SW)),>(SCN0_T+(045*SW)),>(SCN0_T+(046*SW)),>(SCN0_T+(047*SW)),>(SCN0_T+(048*SW)),>(SCN0_T+(049*SW))
+   797 0F32 26 26 26 26 26 26 + 	.BYTE >(SCN0_T+(050*SW)),>(SCN0_T+(051*SW)),>(SCN0_T+(052*SW)),>(SCN0_T+(053*SW)),>(SCN0_T+(054*SW)),>(SCN0_T+(055*SW)),>(SCN0_T+(056*SW)),>(SCN0_T+(057*SW)),>(SCN0_T+(058*SW)),>(SCN0_T+(059*SW))
+   798 0F3C 27 27 27 27 28 28 + 	.BYTE >(SCN0_T+(060*SW)),>(SCN0_T+(061*SW)),>(SCN0_T+(062*SW)),>(SCN0_T+(063*SW)),>(SCN0_T+(064*SW)),>(SCN0_T+(065*SW)),>(SCN0_T+(066*SW)),>(SCN0_T+(067*SW)),>(SCN0_T+(068*SW)),>(SCN0_T+(069*SW))
+   799 0F46 28 28 29 29 29 29 + 	.BYTE >(SCN0_T+(070*SW)),>(SCN0_T+(071*SW)),>(SCN0_T+(072*SW)),>(SCN0_T+(073*SW)),>(SCN0_T+(074*SW)),>(SCN0_T+(075*SW)),>(SCN0_T+(076*SW)),>(SCN0_T+(077*SW)),>(SCN0_T+(078*SW)),>(SCN0_T+(079*SW))
+   800 0F50 2A 2A 2A 2A 2A 2A + 	.BYTE >(SCN0_T+(080*SW)),>(SCN0_T+(081*SW)),>(SCN0_T+(082*SW)),>(SCN0_T+(083*SW)),>(SCN0_T+(084*SW)),>(SCN0_T+(085*SW)),>(SCN0_T+(086*SW)),>(SCN0_T+(087*SW)),>(SCN0_T+(088*SW)),>(SCN0_T+(089*SW))
+   801 0F5A 2B 2B 2B 2B 2B 2B + 	.BYTE >(SCN0_T+(090*SW)),>(SCN0_T+(091*SW)),>(SCN0_T+(092*SW)),>(SCN0_T+(093*SW)),>(SCN0_T+(094*SW)),>(SCN0_T+(095*SW)),>(SCN0_T+(096*SW)),>(SCN0_T+(097*SW)),>(SCN0_T+(098*SW)),>(SCN0_T+(099*SW))
+   802 0F64 2C 2C 2C 2C 2D 2D + 	.BYTE >(SCN0_T+(100*SW)),>(SCN0_T+(101*SW)),>(SCN0_T+(102*SW)),>(SCN0_T+(103*SW)),>(SCN0_T+(104*SW)),>(SCN0_T+(105*SW)),>(SCN0_T+(106*SW)),>(SCN0_T+(107*SW)),>(SCN0_T+(108*SW)),>(SCN0_T+(109*SW))
+   803 0F6E 2D 2D 2E 2E 2E 2E + 	.BYTE >(SCN0_T+(110*SW)),>(SCN0_T+(111*SW)),>(SCN0_T+(112*SW)),>(SCN0_T+(113*SW)),>(SCN0_T+(114*SW)),>(SCN0_T+(115*SW)),>(SCN0_T+(116*SW)),>(SCN0_T+(117*SW)),>(SCN0_T+(118*SW)),>(SCN0_T+(119*SW))
+   804 0F78 2F 2F 2F 2F 2F 2F + 	.BYTE >(SCN0_T+(120*SW)),>(SCN0_T+(121*SW)),>(SCN0_T+(122*SW)),>(SCN0_T+(123*SW)),>(SCN0_T+(124*SW)),>(SCN0_T+(125*SW)),>(SCN0_T+(126*SW)),>(SCN0_T+(127*SW)),>(SCN0_T+(128*SW)),>(SCN0_T+(129*SW))
+   805 0F82 30 30 30 30 30 30 + 	.BYTE >(SCN0_T+(130*SW)),>(SCN0_T+(131*SW)),>(SCN0_T+(132*SW)),>(SCN0_T+(133*SW)),>(SCN0_T+(134*SW)),>(SCN0_T+(135*SW)),>(SCN0_T+(136*SW)),>(SCN0_T+(137*SW)),>(SCN0_T+(138*SW)),>(SCN0_T+(139*SW))
+   806 0F8C 31 31 31 31 32 32 + 	.BYTE >(SCN0_T+(140*SW)),>(SCN0_T+(141*SW)),>(SCN0_T+(142*SW)),>(SCN0_T+(143*SW)),>(SCN0_T+(144*SW)),>(SCN0_T+(145*SW)),>(SCN0_T+(146*SW)),>(SCN0_T+(147*SW)),>(SCN0_T+(148*SW)),>(SCN0_T+(149*SW))
+   807 0F96 32 32 33 33 33 33 + 	.BYTE >(SCN0_T+(150*SW)),>(SCN0_T+(151*SW)),>(SCN0_T+(152*SW)),>(SCN0_T+(153*SW)),>(SCN0_T+(154*SW)),>(SCN0_T+(155*SW)),>(SCN0_T+(156*SW)),>(SCN0_T+(157*SW)),>(SCN0_T+(158*SW)),>(SCN0_T+(159*SW))
+   808 0FA0 34 34 34 34 34 34 + 	.BYTE >(SCN0_T+(160*SW)),>(SCN0_T+(161*SW)),>(SCN0_T+(162*SW)),>(SCN0_T+(163*SW)),>(SCN0_T+(164*SW)),>(SCN0_T+(165*SW)),>(SCN0_T+(166*SW)),>(SCN0_T+(167*SW)),>(SCN0_T+(168*SW)),>(SCN0_T+(169*SW))
+   809 0FAA 35 35 35 35 35 35 + 	.BYTE >(SCN0_T+(170*SW)),>(SCN0_T+(171*SW)),>(SCN0_T+(172*SW)),>(SCN0_T+(173*SW)),>(SCN0_T+(174*SW)),>(SCN0_T+(175*SW)),>(SCN0_T+(176*SW)),>(SCN0_T+(177*SW)),>(SCN0_T+(178*SW)),>(SCN0_T+(179*SW))
+   810 0FB4 36 36 36 36 37 37 + 	.BYTE >(SCN0_T+(180*SW)),>(SCN0_T+(181*SW)),>(SCN0_T+(182*SW)),>(SCN0_T+(183*SW)),>(SCN0_T+(184*SW)),>(SCN0_T+(185*SW)),>(SCN0_T+(186*SW)),>(SCN0_T+(187*SW)),>(SCN0_T+(188*SW)),>(SCN0_T+(189*SW))
+   811 0FBE 37 37			.BYTE >(SCN0_T+(190*SW)),>(SCN0_T+(191*SW))
+   812
+   813 0FC0				.ALIGN $100
+   814 1000			SC1_HI	
+   815 1000-10BF> 40 40 40 40 + 	.BYTE >(SCN1_T+(000*SW)),>(SCN1_T+(001*SW)),>(SCN1_T+(002*SW)),>(SCN1_T+(003*SW)),>(SCN1_T+(004*SW)),>(SCN1_T+(005*SW)),>(SCN1_T+(006*SW)),>(SCN1_T+(007*SW)),>(SCN1_T+(008*SW)),>(SCN1_T+(009*SW))
+   816 100A 41 41 41 41 41 41 + 	.BYTE >(SCN1_T+(010*SW)),>(SCN1_T+(011*SW)),>(SCN1_T+(012*SW)),>(SCN1_T+(013*SW)),>(SCN1_T+(014*SW)),>(SCN1_T+(015*SW)),>(SCN1_T+(016*SW)),>(SCN1_T+(017*SW)),>(SCN1_T+(018*SW)),>(SCN1_T+(019*SW))
+   817 1014 42 42 42 42 43 43 + 	.BYTE >(SCN1_T+(020*SW)),>(SCN1_T+(021*SW)),>(SCN1_T+(022*SW)),>(SCN1_T+(023*SW)),>(SCN1_T+(024*SW)),>(SCN1_T+(025*SW)),>(SCN1_T+(026*SW)),>(SCN1_T+(027*SW)),>(SCN1_T+(028*SW)),>(SCN1_T+(029*SW))
+   818 101E 43 43 44 44 44 44 + 	.BYTE >(SCN1_T+(030*SW)),>(SCN1_T+(031*SW)),>(SCN1_T+(032*SW)),>(SCN1_T+(033*SW)),>(SCN1_T+(034*SW)),>(SCN1_T+(035*SW)),>(SCN1_T+(036*SW)),>(SCN1_T+(037*SW)),>(SCN1_T+(038*SW)),>(SCN1_T+(039*SW))
+   819 1028 45 45 45 45 45 45 + 	.BYTE >(SCN1_T+(040*SW)),>(SCN1_T+(041*SW)),>(SCN1_T+(042*SW)),>(SCN1_T+(043*SW)),>(SCN1_T+(044*SW)),>(SCN1_T+(045*SW)),>(SCN1_T+(046*SW)),>(SCN1_T+(047*SW)),>(SCN1_T+(048*SW)),>(SCN1_T+(049*SW))
+   820 1032 46 46 46 46 46 46 + 	.BYTE >(SCN1_T+(050*SW)),>(SCN1_T+(051*SW)),>(SCN1_T+(052*SW)),>(SCN1_T+(053*SW)),>(SCN1_T+(054*SW)),>(SCN1_T+(055*SW)),>(SCN1_T+(056*SW)),>(SCN1_T+(057*SW)),>(SCN1_T+(058*SW)),>(SCN1_T+(059*SW))
+   821 103C 47 47 47 47 48 48 + 	.BYTE >(SCN1_T+(060*SW)),>(SCN1_T+(061*SW)),>(SCN1_T+(062*SW)),>(SCN1_T+(063*SW)),>(SCN1_T+(064*SW)),>(SCN1_T+(065*SW)),>(SCN1_T+(066*SW)),>(SCN1_T+(067*SW)),>(SCN1_T+(068*SW)),>(SCN1_T+(069*SW))
+   822 1046 48 48 49 49 49 49 + 	.BYTE >(SCN1_T+(070*SW)),>(SCN1_T+(071*SW)),>(SCN1_T+(072*SW)),>(SCN1_T+(073*SW)),>(SCN1_T+(074*SW)),>(SCN1_T+(075*SW)),>(SCN1_T+(076*SW)),>(SCN1_T+(077*SW)),>(SCN1_T+(078*SW)),>(SCN1_T+(079*SW))
+   823 1050 4A 4A 4A 4A 4A 4A + 	.BYTE >(SCN1_T+(080*SW)),>(SCN1_T+(081*SW)),>(SCN1_T+(082*SW)),>(SCN1_T+(083*SW)),>(SCN1_T+(084*SW)),>(SCN1_T+(085*SW)),>(SCN1_T+(086*SW)),>(SCN1_T+(087*SW)),>(SCN1_T+(088*SW)),>(SCN1_T+(089*SW))
+   824 105A 4B 4B 4B 4B 4B 4B + 	.BYTE >(SCN1_T+(090*SW)),>(SCN1_T+(091*SW)),>(SCN1_T+(092*SW)),>(SCN1_T+(093*SW)),>(SCN1_T+(094*SW)),>(SCN1_T+(095*SW)),>(SCN1_T+(096*SW)),>(SCN1_T+(097*SW)),>(SCN1_T+(098*SW)),>(SCN1_T+(099*SW))
+   825 1064 4C 4C 4C 4C 4D 4D + 	.BYTE >(SCN1_T+(100*SW)),>(SCN1_T+(101*SW)),>(SCN1_T+(102*SW)),>(SCN1_T+(103*SW)),>(SCN1_T+(104*SW)),>(SCN1_T+(105*SW)),>(SCN1_T+(106*SW)),>(SCN1_T+(107*SW)),>(SCN1_T+(108*SW)),>(SCN1_T+(109*SW))
+   826 106E 4D 4D 4E 4E 4E 4E + 	.BYTE >(SCN1_T+(110*SW)),>(SCN1_T+(111*SW)),>(SCN1_T+(112*SW)),>(SCN1_T+(113*SW)),>(SCN1_T+(114*SW)),>(SCN1_T+(115*SW)),>(SCN1_T+(116*SW)),>(SCN1_T+(117*SW)),>(SCN1_T+(118*SW)),>(SCN1_T+(119*SW))
+   827 1078 4F 4F 4F 4F 4F 4F + 	.BYTE >(SCN1_T+(120*SW)),>(SCN1_T+(121*SW)),>(SCN1_T+(122*SW)),>(SCN1_T+(123*SW)),>(SCN1_T+(124*SW)),>(SCN1_T+(125*SW)),>(SCN1_T+(126*SW)),>(SCN1_T+(127*SW)),>(SCN1_T+(128*SW)),>(SCN1_T+(129*SW))
+   828 1082 50 50 50 50 50 50 + 	.BYTE >(SCN1_T+(130*SW)),>(SCN1_T+(131*SW)),>(SCN1_T+(132*SW)),>(SCN1_T+(133*SW)),>(SCN1_T+(134*SW)),>(SCN1_T+(135*SW)),>(SCN1_T+(136*SW)),>(SCN1_T+(137*SW)),>(SCN1_T+(138*SW)),>(SCN1_T+(139*SW))
+   829 108C 51 51 51 51 52 52 + 	.BYTE >(SCN1_T+(140*SW)),>(SCN1_T+(141*SW)),>(SCN1_T+(142*SW)),>(SCN1_T+(143*SW)),>(SCN1_T+(144*SW)),>(SCN1_T+(145*SW)),>(SCN1_T+(146*SW)),>(SCN1_T+(147*SW)),>(SCN1_T+(148*SW)),>(SCN1_T+(149*SW))
+   830 1096 52 52 53 53 53 53 + 	.BYTE >(SCN1_T+(150*SW)),>(SCN1_T+(151*SW)),>(SCN1_T+(152*SW)),>(SCN1_T+(153*SW)),>(SCN1_T+(154*SW)),>(SCN1_T+(155*SW)),>(SCN1_T+(156*SW)),>(SCN1_T+(157*SW)),>(SCN1_T+(158*SW)),>(SCN1_T+(159*SW))
+   831 10A0 54 54 54 54 54 54 + 	.BYTE >(SCN1_T+(160*SW)),>(SCN1_T+(161*SW)),>(SCN1_T+(162*SW)),>(SCN1_T+(163*SW)),>(SCN1_T+(164*SW)),>(SCN1_T+(165*SW)),>(SCN1_T+(166*SW)),>(SCN1_T+(167*SW)),>(SCN1_T+(168*SW)),>(SCN1_T+(169*SW))
+   832 10AA 55 55 55 55 55 55 + 	.BYTE >(SCN1_T+(170*SW)),>(SCN1_T+(171*SW)),>(SCN1_T+(172*SW)),>(SCN1_T+(173*SW)),>(SCN1_T+(174*SW)),>(SCN1_T+(175*SW)),>(SCN1_T+(176*SW)),>(SCN1_T+(177*SW)),>(SCN1_T+(178*SW)),>(SCN1_T+(179*SW))
+   833 10B4 56 56 56 56 57 57 + 	.BYTE >(SCN1_T+(180*SW)),>(SCN1_T+(181*SW)),>(SCN1_T+(182*SW)),>(SCN1_T+(183*SW)),>(SCN1_T+(184*SW)),>(SCN1_T+(185*SW)),>(SCN1_T+(186*SW)),>(SCN1_T+(187*SW)),>(SCN1_T+(188*SW)),>(SCN1_T+(189*SW))
+   834 10BE 57 57			.BYTE >(SCN1_T+(190*SW)),>(SCN1_T+(191*SW))
+   835
+   836 10C0				.ALIGN $100
+   837 1100			SC_LO
+   838 1100-11BF> 00 20 40 60 + 	.BYTE <(SCN0_T+(000*SW)),<(SCN0_T+(001*SW)),<(SCN0_T+(002*SW)),<(SCN0_T+(003*SW)),<(SCN0_T+(004*SW)),<(SCN0_T+(005*SW)),<(SCN0_T+(006*SW)),<(SCN0_T+(007*SW)),<(SCN0_T+(008*SW)),<(SCN0_T+(009*SW))
+   839 110A 40 60 80 A0 C0 E0 + 	.BYTE <(SCN0_T+(010*SW)),<(SCN0_T+(011*SW)),<(SCN0_T+(012*SW)),<(SCN0_T+(013*SW)),<(SCN0_T+(014*SW)),<(SCN0_T+(015*SW)),<(SCN0_T+(016*SW)),<(SCN0_T+(017*SW)),<(SCN0_T+(018*SW)),<(SCN0_T+(019*SW))
+   840 1114 80 A0 C0 E0 00 20 + 	.BYTE <(SCN0_T+(020*SW)),<(SCN0_T+(021*SW)),<(SCN0_T+(022*SW)),<(SCN0_T+(023*SW)),<(SCN0_T+(024*SW)),<(SCN0_T+(025*SW)),<(SCN0_T+(026*SW)),<(SCN0_T+(027*SW)),<(SCN0_T+(028*SW)),<(SCN0_T+(029*SW))
+   841 111E C0 E0 00 20 40 60 + 	.BYTE <(SCN0_T+(030*SW)),<(SCN0_T+(031*SW)),<(SCN0_T+(032*SW)),<(SCN0_T+(033*SW)),<(SCN0_T+(034*SW)),<(SCN0_T+(035*SW)),<(SCN0_T+(036*SW)),<(SCN0_T+(037*SW)),<(SCN0_T+(038*SW)),<(SCN0_T+(039*SW))
+   842 1128 00 20 40 60 80 A0 + 	.BYTE <(SCN0_T+(040*SW)),<(SCN0_T+(041*SW)),<(SCN0_T+(042*SW)),<(SCN0_T+(043*SW)),<(SCN0_T+(044*SW)),<(SCN0_T+(045*SW)),<(SCN0_T+(046*SW)),<(SCN0_T+(047*SW)),<(SCN0_T+(048*SW)),<(SCN0_T+(049*SW))
+   843 1132 40 60 80 A0 C0 E0 + 	.BYTE <(SCN0_T+(050*SW)),<(SCN0_T+(051*SW)),<(SCN0_T+(052*SW)),<(SCN0_T+(053*SW)),<(SCN0_T+(054*SW)),<(SCN0_T+(055*SW)),<(SCN0_T+(056*SW)),<(SCN0_T+(057*SW)),<(SCN0_T+(058*SW)),<(SCN0_T+(059*SW))
+   844 113C 80 A0 C0 E0 00 20 + 	.BYTE <(SCN0_T+(060*SW)),<(SCN0_T+(061*SW)),<(SCN0_T+(062*SW)),<(SCN0_T+(063*SW)),<(SCN0_T+(064*SW)),<(SCN0_T+(065*SW)),<(SCN0_T+(066*SW)),<(SCN0_T+(067*SW)),<(SCN0_T+(068*SW)),<(SCN0_T+(069*SW))
+   845 1146 C0 E0 00 20 40 60 + 	.BYTE <(SCN0_T+(070*SW)),<(SCN0_T+(071*SW)),<(SCN0_T+(072*SW)),<(SCN0_T+(073*SW)),<(SCN0_T+(074*SW)),<(SCN0_T+(075*SW)),<(SCN0_T+(076*SW)),<(SCN0_T+(077*SW)),<(SCN0_T+(078*SW)),<(SCN0_T+(079*SW))
+   846 1150 00 20 40 60 80 A0 + 	.BYTE <(SCN0_T+(080*SW)),<(SCN0_T+(081*SW)),<(SCN0_T+(082*SW)),<(SCN0_T+(083*SW)),<(SCN0_T+(084*SW)),<(SCN0_T+(085*SW)),<(SCN0_T+(086*SW)),<(SCN0_T+(087*SW)),<(SCN0_T+(088*SW)),<(SCN0_T+(089*SW))
+   847 115A 40 60 80 A0 C0 E0 + 	.BYTE <(SCN0_T+(090*SW)),<(SCN0_T+(091*SW)),<(SCN0_T+(092*SW)),<(SCN0_T+(093*SW)),<(SCN0_T+(094*SW)),<(SCN0_T+(095*SW)),<(SCN0_T+(096*SW)),<(SCN0_T+(097*SW)),<(SCN0_T+(098*SW)),<(SCN0_T+(099*SW))
+   848 1164 80 A0 C0 E0 00 20 + 	.BYTE <(SCN0_T+(100*SW)),<(SCN0_T+(101*SW)),<(SCN0_T+(102*SW)),<(SCN0_T+(103*SW)),<(SCN0_T+(104*SW)),<(SCN0_T+(105*SW)),<(SCN0_T+(106*SW)),<(SCN0_T+(107*SW)),<(SCN0_T+(108*SW)),<(SCN0_T+(109*SW))
+   849 116E C0 E0 00 20 40 60 + 	.BYTE <(SCN0_T+(110*SW)),<(SCN0_T+(111*SW)),<(SCN0_T+(112*SW)),<(SCN0_T+(113*SW)),<(SCN0_T+(114*SW)),<(SCN0_T+(115*SW)),<(SCN0_T+(116*SW)),<(SCN0_T+(117*SW)),<(SCN0_T+(118*SW)),<(SCN0_T+(119*SW))
+   850 1178 00 20 40 60 80 A0 + 	.BYTE <(SCN0_T+(120*SW)),<(SCN0_T+(121*SW)),<(SCN0_T+(122*SW)),<(SCN0_T+(123*SW)),<(SCN0_T+(124*SW)),<(SCN0_T+(125*SW)),<(SCN0_T+(126*SW)),<(SCN0_T+(127*SW)),<(SCN0_T+(128*SW)),<(SCN0_T+(129*SW))
+   851 1182 40 60 80 A0 C0 E0 + 	.BYTE <(SCN0_T+(130*SW)),<(SCN0_T+(131*SW)),<(SCN0_T+(132*SW)),<(SCN0_T+(133*SW)),<(SCN0_T+(134*SW)),<(SCN0_T+(135*SW)),<(SCN0_T+(136*SW)),<(SCN0_T+(137*SW)),<(SCN0_T+(138*SW)),<(SCN0_T+(139*SW))
+   852 118C 80 A0 C0 E0 00 20 + 	.BYTE <(SCN0_T+(140*SW)),<(SCN0_T+(141*SW)),<(SCN0_T+(142*SW)),<(SCN0_T+(143*SW)),<(SCN0_T+(144*SW)),<(SCN0_T+(145*SW)),<(SCN0_T+(146*SW)),<(SCN0_T+(147*SW)),<(SCN0_T+(148*SW)),<(SCN0_T+(149*SW))
+   853 1196 C0 E0 00 20 40 60 + 	.BYTE <(SCN0_T+(150*SW)),<(SCN0_T+(151*SW)),<(SCN0_T+(152*SW)),<(SCN0_T+(153*SW)),<(SCN0_T+(154*SW)),<(SCN0_T+(155*SW)),<(SCN0_T+(156*SW)),<(SCN0_T+(157*SW)),<(SCN0_T+(158*SW)),<(SCN0_T+(159*SW))
+   854 11A0 00 20 40 60 80 A0 + 	.BYTE <(SCN0_T+(160*SW)),<(SCN0_T+(161*SW)),<(SCN0_T+(162*SW)),<(SCN0_T+(163*SW)),<(SCN0_T+(164*SW)),<(SCN0_T+(165*SW)),<(SCN0_T+(166*SW)),<(SCN0_T+(167*SW)),<(SCN0_T+(168*SW)),<(SCN0_T+(169*SW))
+   855 11AA 40 60 80 A0 C0 E0 + 	.BYTE <(SCN0_T+(170*SW)),<(SCN0_T+(171*SW)),<(SCN0_T+(172*SW)),<(SCN0_T+(173*SW)),<(SCN0_T+(174*SW)),<(SCN0_T+(175*SW)),<(SCN0_T+(176*SW)),<(SCN0_T+(177*SW)),<(SCN0_T+(178*SW)),<(SCN0_T+(179*SW))
+   856 11B4 80 A0 C0 E0 00 20 + 	.BYTE <(SCN0_T+(180*SW)),<(SCN0_T+(181*SW)),<(SCN0_T+(182*SW)),<(SCN0_T+(183*SW)),<(SCN0_T+(184*SW)),<(SCN0_T+(185*SW)),<(SCN0_T+(186*SW)),<(SCN0_T+(187*SW)),<(SCN0_T+(188*SW)),<(SCN0_T+(189*SW))
+   857 11BE C0 E0			.BYTE <(SCN0_T+(190*SW)),<(SCN0_T+(191*SW))
+   858
+   859 11C0				.ALIGN $100
+   860 1200			SCR_HOR
+   861 1200-149B> 00 00 00 00 +  .BYTE 00,00,00,00,01,01,01,01,02,02,02,02,03,03,03,03,04,04,04,04,05,05,05,05,06,06,06,06,07,07,07,07
+   862 1220 08 08 08 08 09 09 +  .BYTE 08,08,08,08,09,09,09,09,10,10,10,10,11,11,11,11,12,12,12,12,13,13,13,13,14,14,14,14,15,15,15,15
+   863 1240 10 10 10 10 11 11 +  .BYTE 16,16,16,16,17,17,17,17,18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,22,22,22,22,23,23,23,23
+   864 1260 18 18 18 18 19 19 +  .BYTE 24,24,24,24,25,25,25,25,26,26,26,26,27,27,27,27,28,28,28,28,29,29,29,29,30,30,30,30,31,31,31,31
+   865 1280			SCR_OR
+   866 				.REPT	32
+   867 				 .BYTE $C0,$30,$0C,$03
+   868 				.ENDR
+   868 				.ENDR
+Source: REPT
+   867 1280 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 1284 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 1288 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 128C C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 1290 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 1294 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 1298 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 129C C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12A0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12A4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12A8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12AC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12B0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12B4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12B8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12BC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12C0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12C4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12C8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12CC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12D0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12D4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12D8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12DC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12E0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12E4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12E8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12EC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12F0 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12F4 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12F8 C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+   867 12FC C0 30 0C 03		 .BYTE $C0,$30,$0C,$03
+Source: robotron_32col_v15.asm
+   869 1300			SCR_AND
+   870 				.REPT	32
+   871 				 .BYTE $3F,$CF,$F3,$FC
+   872 				.ENDR
+   872 				.ENDR
+Source: REPT
+   871 1300 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1304 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1308 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 130C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1310 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1314 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1318 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 131C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1320 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1324 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1328 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 132C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1330 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1334 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1338 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 133C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1340 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1344 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1348 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 134C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1350 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1354 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1358 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 135C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1360 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1364 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1368 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 136C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1370 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1374 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 1378 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+   871 137C 3F CF F3 FC		 .BYTE $3F,$CF,$F3,$FC
+Source: robotron_32col_v15.asm
+   873 1380			SPR08_DRW_CNT
+   874 				.REPT	32
+   875 				 .BYTE 1*8, 2*8, 2*8, 2*8
+   876 				.ENDR
+   876 				.ENDR
+Source: REPT
+   875 1380 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 1384 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 1388 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 138C 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 1390 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 1394 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 1398 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 139C 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13A0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13A4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13A8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13AC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13B0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13B4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13B8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13BC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13C0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13C4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13C8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13CC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13D0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13D4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13D8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13DC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13E0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13E4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13E8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13EC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13F0 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13F4 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13F8 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+   875 13FC 08 10 10 10		 .BYTE 1*8, 2*8, 2*8, 2*8
+Source: robotron_32col_v15.asm
+   877 1400			SPR08_CLR_CNT
+   878 				.REPT	32
+   879 				 .BYTE 1, 2, 2, 2
+   880 				.ENDR
+   880 				.ENDR
+Source: REPT
+   879 1400 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1404 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1408 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 140C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1410 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1414 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1418 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 141C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1420 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1424 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1428 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 142C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1430 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1434 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1438 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 143C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1440 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1444 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1448 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 144C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1450 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1454 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1458 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 145C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1460 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1464 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1468 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 146C 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1470 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1474 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 1478 01 02 02 02		 .BYTE 1, 2, 2, 2
+   879 147C 01 02 02 02		 .BYTE 1, 2, 2, 2
+Source: robotron_32col_v15.asm
+   881
+   882 1480 D0 D8 E8 F8		SPR00_AND_LO .BYTE <(SPR00_AND_0-8),<(SPR00_AND_1-8),<(SPR00_AND_2-8),<(SPR00_AND_3-8)
+   883 1484 14 14 14 14		SPR00_AND_HI .BYTE >(SPR00_AND_0-8),>(SPR00_AND_1-8),>(SPR00_AND_2-8),>(SPR00_AND_3-8)
+   884 1488 98 A0 B0 C0		SPR00_ORA_LO .BYTE <(SPR00_ORA_0-8),<(SPR00_ORA_1-8),<(SPR00_ORA_2-8),<(SPR00_ORA_3-8)
+   885 148C 14 14 14 14		SPR00_ORA_HI .BYTE >(SPR00_ORA_0-8),>(SPR00_ORA_1-8),>(SPR00_ORA_2-8),>(SPR00_ORA_3-8)
+   886
+   887 1490 80			SPRITE_AND_LO_LO .BYTE <SPR00_AND_LO
+   888 1491 14			SPRITE_AND_LO_HI .BYTE >SPR00_AND_LO
+   889 1492 84			SPRITE_AND_HI_LO .BYTE <SPR00_AND_HI
+   890 1493 14			SPRITE_AND_HI_HI .BYTE >SPR00_AND_HI
+   891 1494 88			SPRITE_ORA_LO_LO .BYTE <SPR00_ORA_LO
+   892 1495 14			SPRITE_ORA_LO_HI .BYTE >SPR00_ORA_LO
+   893 1496 8C			SPRITE_ORA_HI_LO .BYTE <SPR00_ORA_HI
+   894 1497 14			SPRITE_ORA_HI_HI .BYTE >SPR00_ORA_HI
+   895 1498 00 01 02 03		SPRITE_TYPE      .BYTE 0,1,2,3
+   896
+   897 149C				.ALIGN 8
+   898 14A0			SPR00_ORA_0
+   899 				;.BYTE %00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000 ; remove?
+   900 14A0-150F> 14 7D 69 41 + .BYTE %00010100,%01111101,%01101001,%01000001,%01000001,%01101001,%01111101,%00010100
+   901
+   902 14A8			SPR00_ORA_1
+   903 14A8 00 40 40 40 40 40 + .BYTE %00000000,%01000000,%01000000,%01000000,%01000000,%01000000,%01000000,%00000000
+   904 14B0 05 1F 1A 10 10 1A + .BYTE %00000101,%00011111,%00011010,%00010000,%00010000,%00011010,%00011111,%00000101
+   905
+   906 14B8			SPR00_ORA_2
+   907 14B8 40 D0 90 10 10 90 + .BYTE %01000000,%11010000,%10010000,%00010000,%00010000,%10010000,%11010000,%01000000
+   908 14C0 01 07 06 04 04 06 + .BYTE %00000001,%00000111,%00000110,%00000100,%00000100,%00000110,%00000111,%00000001
+   909
+   910 14C8			SPR00_ORA_3
+   911 14C8 50 F4 A4 04 04 A4 + .BYTE %01010000,%11110100,%10100100,%00000100,%00000100,%10100100,%11110100,%01010000
+   912 14D0 00 01 01 01 01 01 + .BYTE %00000000,%00000001,%00000001,%00000001,%00000001,%00000001,%00000001,%00000000
+   913
+   914 14D8			SPR00_AND_0
+   915 				;.BYTE %11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111,%11111111 ; remove?
+   916 14D8 C3 00 00 3C 3C 00 + .BYTE %11000011,%00000000,%00000000,%00111100,%00111100,%00000000,%00000000,%11000011
+   917
+   918 14E0			SPR00_AND_1
+   919 14E0 FF 3F 3F 3F 3F 3F + .BYTE %11111111,%00111111,%00111111,%00111111,%00111111,%00111111,%00111111,%11111111
+   920 14E8 F0 C0 C0 CF CF C0 + .BYTE %11110000,%11000000,%11000000,%11001111,%11001111,%11000000,%11000000,%11110000
+   921
+   922 14F0			SPR00_AND_2
+   923 14F0 3F 0F 0F CF CF 0F + .BYTE %00111111,%00001111,%00001111,%11001111,%11001111,%00001111,%00001111,%00111111
+   924 14F8 FC F0 F0 F3 F3 F0 + .BYTE %11111100,%11110000,%11110000,%11110011,%11110011,%11110000,%11110000,%11111100
+   925
+   926 1500			SPR00_AND_3
+   927 1500 0F 03 03 F3 F3 03 + .BYTE %00001111,%00000011,%00000011,%11110011,%11110011,%00000011,%00000011,%00001111
+   928 1508 FF FC FC FC FC FC + .BYTE %11111111,%11111100,%11111100,%11111100,%11111100,%11111100,%11111100,%11111111
+   929
+   930 1510				.ALIGN $100
+   931 1600-16C1> D9 0A		SPRITE_DRW_JMP_LIST	.WORD DRAW_08
+   932 1602 00 B8 00 B8 0D 10 + SCR0_OBJ_V	.BYTE 	0,184,0,184,13,16,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,117,114,111,108,105
+   933 1622 00 00 78 78 0D 10 + SCR0_OBJ_H	.BYTE 	0,0,120,120,13,16,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,117,114,111,108,105
+   934 1642 00 00 00 00 00 00 + SCR0_OBJ_T	.BYTE	0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0
+   935 1662 00 B8 00 B8 0D 10 + SCR1_OBJ_V	.BYTE 	0,184,0,184,13,16,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,117,114,111,108,105
+   936 1682 00 00 78 78 0D 10 + SCR1_OBJ_H	.BYTE 	0,0,120,120,13,16,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,117,114,111,108,105
+   937 16A2 00 00 00 00 00 00 + SCR1_OBJ_T	.BYTE	0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 ; word aligned so must be *2
+   938
+   939 16C2				.ALIGN $100
+   940 1700-1701> 33 0C		SPRITE_CLR_JMP_LIST	.WORD CLEAR_08
+   941
+   942 1702			.ALIGN $1000
+   943 2000			SCN0_T ; screen	
+   944 = 3000			SCN0_B	EQU	SCN0_T +4096
+   945 				; 2k spare between end of SCN0_B and start of SCN1_T ?
+   946 = 4000			SCN1_T	EQU	SCN0_B +4096
+   947 = 5000			SCN1_B	EQU	SCN1_T +4096
